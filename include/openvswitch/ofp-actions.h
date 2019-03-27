@@ -125,6 +125,7 @@
     OFPACT(CLEAR_ACTIONS,   ofpact_null,        ofpact, "clear_actions") \
     OFPACT(WRITE_ACTIONS,   ofpact_nest,        actions, "write_actions") \
     OFPACT(WRITE_METADATA,  ofpact_metadata,    ofpact, "write_metadata") \
+    OFPACT(WRITE_METADATA_FROM_PACKET,  ofpact_write_metadata_from_packet,    ofpact, "write_metadata_from_packet") \
     OFPACT(GOTO_TABLE,      ofpact_goto_table,  ofpact, "goto_table")
 
 /* enum ofpact_type, with a member OFPACT_<ENUM> for each action. */
@@ -170,7 +171,8 @@ enum {
  *       originate from OpenFlow, then setting 'raw' to zero should be fine:
  *       code to translate the ofpact to OpenFlow must tolerate this case.)
  */
-struct ofpact {
+struct
+ofpact {
     /* We want the space advantage of an 8-bit type here on every
      * implementation, without giving up the advantage of having a useful type
      * on implementations that support packed enums. */
@@ -584,6 +586,21 @@ struct ofpact_metadata {
     ovs_be64 metadata;
     ovs_be64 mask;
 };
+
+
+
+/* pjq
+ * OFPACT_WRITE_METADATA_FROM_PACKET
+ *
+ *  */
+struct ofpact_write_metadata_from_packet {
+    struct ofpact ofpact;
+    ovs_be16  metadata_offset;
+    ovs_be16  packet_offset;
+    uint16_t  field_len;
+};
+
+
 
 /* OFPACT_METER.
  *
@@ -1177,6 +1194,10 @@ struct ofpact_set_field *ofpact_put_reg_load2(struct ofpbuf *ofpacts,
     DEFINE_INST(OFPIT11_WRITE_METADATA,                     \
                 ofp11_instruction_write_metadata, false,    \
                 "write_metadata")                           \
+                                                            \
+    DEFINE_INST(OFPIT11_WRITE_METADATA_FROM_PACKET,                     \
+                ofp11_instruction_write_metadata_from_packet, false,    \
+                "write_metadata_from_packet")                           \
                                                             \
     DEFINE_INST(OFPIT11_GOTO_TABLE,                         \
                 ofp11_instruction_goto_table,     true,    \

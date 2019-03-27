@@ -313,6 +313,7 @@ enum ofp11_instruction_type {
     OFPIT11_APPLY_ACTIONS = 4,     /* Applies the action(s) immediately */
     OFPIT11_CLEAR_ACTIONS = 5,     /* Clears all actions from the datapath
                                       action set */
+    OFPIT11_WRITE_METADATA_FROM_PACKET = 7,     /* pjq */
     OFPIT11_EXPERIMENTER = 0xFFFF  /* Experimenter instruction */
 };
 
@@ -346,6 +347,21 @@ struct ofp11_instruction_write_metadata {
     ovs_be64 metadata_mask;     /* Metadata write bitmask */
 };
 OFP_ASSERT(sizeof(struct ofp11_instruction_write_metadata) == 24);
+
+
+
+/* pjq: Instruction structure for OFPIT_WRITE_METADATA_FROM_PACKET */
+struct ofp11_instruction_write_metadata_from_packet {
+    ovs_be16 type;              /* OFPIT_WRITE_METADATA_FROM_PACKET */
+    ovs_be16 len;               /* Length of this struct in bytes. */
+    ovs_be16  metadata_offset;  /* start location of metadata to store packet_field*/
+    ovs_be16  packet_offset;   /* start location from packet to read packet_field */
+    ovs_be16  field_len;       /* lenth to write to metadata. */
+    uint8_t pad[6];            /* Align to 64-bits */
+
+};
+OFP_ASSERT(sizeof(struct ofp11_instruction_write_metadata_from_packet) == 16);
+
 
 /* Instruction structure for OFPIT_WRITE/APPLY/CLEAR_ACTIONS */
 struct ofp11_instruction_actions {

@@ -25,6 +25,7 @@
 #include <netinet/ip6.h>
 #include <stdlib.h>
 #include <string.h>
+/*   #include <datapath/linux/compat/include/linux/openvswitch.h>   */
 
 #include "byte-order.h"
 #include "coverage.h"
@@ -4252,11 +4253,14 @@ static void get_pof_add_field_key(const struct pof_flow *, struct ovs_key_add_fi
 static void get_pof_add_field_mask(const struct pof_flow *, struct ovs_key_add_field *, int);
 static void get_pof_delete_field_key(const struct pof_flow *, struct ovs_key_delete_field *, int);
 static void get_pof_delete_field_mask(const struct pof_flow *, struct ovs_key_delete_field *, int);
+static void get_pof_write_metadata_from_packet_key(const struct pof_flow *, struct ovs_key_write_metadata_from_packet *, int);
+static void get_pof_write_metadata_from_packet_mask(const struct pof_flow *, struct ovs_key_write_metadata_from_packet *, int);
 static void put_ethernet_key(const struct ovs_key_ethernet *, struct flow *);
 static void put_pof_set_field_key(const struct ovs_key_set_field *, struct pof_flow *, int);
 static void put_pof_modify_field_key(const struct ovs_key_modify_field *, struct pof_flow *, int);
 static void put_pof_add_field_key(const struct ovs_key_add_field *, struct pof_flow *, int);
 static void put_pof_delete_field_key(const struct ovs_key_delete_field *, struct pof_flow *, int);
+static void put_pof_write_metadata_from_packet_key(const struct ovs_key_write_metadata_from_packet *, struct pof_flow *, int);
 static void get_ipv4_key(const struct flow *, struct ovs_key_ipv4 *,
                          bool is_mask);
 static void put_ipv4_key(const struct ovs_key_ipv4 *, struct flow *,
@@ -5806,6 +5810,55 @@ put_pof_delete_field_key(const struct ovs_key_delete_field *eth, struct pof_flow
 	/*VLOG_INFO("++++++tsf put_delete_field_key eth->offset=%d, eth->len=%d", ntohs(flow->offset[index]), *uint32);*/
 }
 
+/* pjq */
+static void
+commit_pof_write_metadata_from_packet_action(const struct flow *flow, struct flow *base_flow,
+                            struct ofpbuf *odp_actions,
+                            struct flow_wildcards *wc,
+                            bool use_masked, int index)
+{
+    struct ovs_key_write_metadata_from_packet key, base, mask;
+
+    struct pof_flow * pflow = flow;
+    struct pof_flow * pbase = base_flow;
+    get_pof_write_metadata_from_packet_key(pflow, &key, index);
+    get_pof_write_metadata_from_packet_key(pbase, &base, index);
+    use_masked = true;
+
+    get_pof_write_metadata_from_packet_mask(pflow, &mask, index);
+
+    /*VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: before pof_commit");*/
+    if (pof_commit(OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET, use_masked,
+                   &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //pjq notes: commit return false, no run
+        /*VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: after pof_commit");*/
+        put_pof_write_metadata_from_packet_key(&base, base_flow, index);
+        put_pof_write_metadata_from_packet_key(&mask, &wc->masks, index);
+    }
+}
+
+static void
+get_pof_write_metadata_from_packet_key(const struct pof_flow *flow, struct ovs_key_write_metadata_from_packet *eth, int index)
+{
+    eth->packet_offset = ntohs(flow->offset[index]);
+    eth->field_len = ntohs(flow->len[index]);
+    memcpy(eth->metadata_offset, flow->value[index], sizeof(flow->value[index]));
+}
+
+static void
+get_pof_write_metadata_from_packet_mask(const struct pof_flow *flow, struct ovs_key_write_metadata_from_packet *eth, int index)
+{
+    eth->packet_offset = ntohs(flow->offset[index]);
+    eth->field_len = ntohs(flow->len[index]);
+    memcpy(eth->metadata_offset, flow->value[index], sizeof(flow->value[index]));
+}
+
+static void
+put_pof_write_metadata_from_packet_key(const struct ovs_key_write_metadata_from_packet *eth, struct pof_flow *flow, int index)
+{
+    flow->offset[index] =htons(eth->packet_offset);
+    flow->len[index] = htons(eth->field_len);
+    memcpy(flow->value[index], eth->metadata_offset, sizeof(eth->metadata_offset));
+}
 
 static void
 commit_pof_action(const struct flow *flow, struct flow *base_flow,
@@ -5843,6 +5896,11 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");*/
 				commit_pof_delete_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
+
+		    case OFPACT_WRITE_METADATA_FROM_PACKET:
+                /*VLOG_INFO("++++++pjq commit_pof_action: commit_pof_write_metadata_from_packet_action.");*/
+                commit_pof_write_metadata_from_packet_action(flow, base_flow, odp_actions, wc, use_masked, i);
+                break;
 		}
 
 		i++;

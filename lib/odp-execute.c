@@ -23,6 +23,7 @@
 #include <netinet/ip6.h>
 #include <stdlib.h>
 #include <string.h>
+//#include <linux/compat/include/linux/openvswitch.h>   /* pjq */
 
 #include "dp-packet.h"
 #include "dpif.h"
@@ -37,6 +38,10 @@
 #include "timeval.h"
 
 VLOG_DEFINE_THIS_MODULE(odp_execute);
+
+
+void pofbf_copy_bit(const uint8_t *data_ori, uint8_t *data_res, uint16_t offset_b, uint16_t len_b); /* pjq */
+void pofbf_cover_bit(uint8_t *data_ori, const uint8_t *value, uint16_t pos_b, uint16_t len_b); /* pjq */
 
 /* tsf: to calculate bandwidth. should keep consistent with dpif-netdev.c */
 struct bandwidth_info {
@@ -677,14 +682,21 @@ odp_execute_set_action(struct dp_packet *packet, const struct nlattr *a)
     }
 }
 
+
+
+
+#define POFDP_METADATA_MAX_LEN (128)
+
 #define get_mask(a, type) ((const type *)(const void *)(a + 1) + 1)
 
 static void
 odp_execute_masked_set_action(struct dp_packet *packet,
                               const struct nlattr *a, long long ingress_time,
+                              struct pofdp_metadata *pof_md,
                               struct bandwidth_band *bd_info)
 {
     struct pkt_metadata *md = &packet->md;
+    struct ovs_key_write_metadata_from_packet *okwmfp; /* pjq */
     enum ovs_key_attr type = nl_attr_type(a);
     struct mpls_hdr *mh;
 
@@ -712,6 +724,16 @@ odp_execute_masked_set_action(struct dp_packet *packet,
     	odp_pof_delete_field(packet, nl_attr_get(a),
     						get_mask(a, struct ovs_key_delete_field));
     	break;
+
+   	case OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET:            /* pjq */
+         /*VLOG_INFO("+++++++++++pjq odp_execute_masked_set_action: before OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET");*/
+        okwmfp = get_mask(a, struct ovs_key_write_metadata_from_packet);
+        uint8_t  value[POFDP_METADATA_MAX_LEN];
+        memset(value, 0, sizeof(value));
+        pofbf_copy_bit(packet, value, okwmfp->packet_offset, okwmfp->field_len);
+        pofbf_cover_bit(pof_md, value, okwmfp->metadata_offset, okwmfp->field_len);
+        break;
+
     case OVS_KEY_ATTR_PRIORITY:
         md->skb_priority = nl_attr_get_u32(a)
             | (md->skb_priority & ~*get_mask(a, uint32_t));
@@ -808,6 +830,7 @@ odp_execute_sample(void *dp, struct dp_packet *packet, bool steal,
     const struct nlattr *subactions = NULL;
     const struct nlattr *a;
     struct dp_packet_batch pb;
+    struct pofdp_metadata_batch pm;
     size_t left;
 
     NL_NESTED_FOR_EACH_UNSAFE (a, left, action) {
@@ -836,7 +859,7 @@ odp_execute_sample(void *dp, struct dp_packet *packet, bool steal,
 
     packet_batch_init_packet(&pb, packet);
     odp_execute_actions(dp, &pb, steal, nl_attr_get(subactions),
-                        nl_attr_get_size(subactions), dp_execute_action, NULL);
+                        nl_attr_get_size(subactions), dp_execute_action, &pm, NULL);
 }
 
 static bool
@@ -877,9 +900,11 @@ void
 odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
                     const struct nlattr *actions, size_t actions_len,
                     odp_execute_cb dp_execute_action,
+                    struct pofdp_metadata_batch *pofdp_mds,
                     void *bandwidth_info)
 {
     struct dp_packet **packets = batch->packets;
+    struct pofdp_metadata **pof_mds = pofdp_mds->pof_mds;
     int cnt = batch->count;
     const struct nlattr *a;
     unsigned int left;
@@ -982,7 +1007,7 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
         case OVS_ACTION_ATTR_SET_MASKED:
             /*VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");*/
             for (i = 0; i < cnt; i++) {
-                odp_execute_masked_set_action(packets[i], nl_attr_get(a), ingress_time, bd_info);
+                odp_execute_masked_set_action(packets[i], nl_attr_get(a), ingress_time, pof_mds[i], bd_info);
             }
             break;
 

@@ -27,6 +27,7 @@ struct nlattr;
 struct dp_packet;
 struct pkt_metadata;
 struct dp_packet_batch;
+struct pofdp_metadata_batch;    /* pjq  */
 
 typedef void (*odp_execute_cb)(void *dp, struct dp_packet_batch *batch,
                                const struct nlattr *action, bool may_steal);
@@ -39,5 +40,6 @@ void odp_execute_actions(void *dp, struct dp_packet_batch *batch,
                          bool steal,
                          const struct nlattr *actions, size_t actions_len,
                          odp_execute_cb dp_execute_action,
+						 struct pofdp_metadata_batch *pofdp_mds,
                          void *bandwidth_info);
 #endif

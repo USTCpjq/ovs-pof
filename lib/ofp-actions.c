@@ -451,6 +451,7 @@ ofpact_next_flattened(const struct ofpact *ofpact)
     case OFPACT_METER:
     case OFPACT_CLEAR_ACTIONS:
     case OFPACT_WRITE_METADATA:
+    case OFPACT_WRITE_METADATA_FROM_PACKET:
     case OFPACT_GOTO_TABLE:
     case OFPACT_NAT:
         return ofpact_next(ofpact);
@@ -6675,6 +6676,74 @@ format_WRITE_METADATA(const struct ofpact_metadata *a, struct ds *s)
 
 /* Goto-Table instruction. */
 
+/* pjq
+ *
+ *  */
+static enum ofperr
+decode_WRITE_METADATA_FROM_PACKET(const struct ofp11_instruction_write_metadata_from_packet *oiwmfp,
+                                  enum ofp_version ofp_version OVS_UNUSED,
+                                  struct ofpbuf *out)
+{
+    struct ofpact_write_metadata_from_packet *owmfp;
+    owmfp = ofpact_put_WRITE_METADATA_FROM_PACKET(out);
+    owmfp->metadata_offset = ntohs(oiwmfp->metadata_offset);
+    owmfp->packet_offset = ntohs(oiwmfp->packet_offset);
+    owmfp->field_len = ntohs(oiwmfp->field_len);
+}
+
+/* pjq
+ *
+ *  */
+static void
+encode_WRITE_METADATA_FROM_PACKET(const struct ofpact_write_metadata_from_packet *owmfp,
+                                  enum ofp_version ofp_version, struct ofpbuf *out)
+{
+    struct ofp11_instruction_write_metadata_from_packet *oiwmfp;
+
+    oiwmfp = instruction_put_OFPIT11_WRITE_METADATA_FROM_PACKET(out);
+    oiwmfp->metadata_offset = htons(owmfp->metadata_offset);
+    oiwmfp->packet_offset = htons(owmfp->packet_offset);
+    oiwmfp->field_len = htons(owmfp->field_len);
+
+}
+/* pjq
+ *
+ *
+ *  */
+static void
+format_WRITE_METADATA_FROM_PACKET(const struct ofpact_write_metadata_from_packet *a, struct ds *s)
+{
+    ds_put_format(s, "%swrite_metadata_from_packet->metadata_offset=%s%"PRIu16",packet_offset=%"PRIu16",field_len=%"PRIu16,
+                  colors.special, colors.end, a->metadata_offset, a->packet_offset, a->field_len);
+}
+
+static char * OVS_WARN_UNUSED_RESULT
+parse_WRITE_METADATA_FROM_PACKET(char *arg, struct ofpbuf *ofpacts,
+                     enum ofputil_protocol *usable_protocols) {
+    struct ofpact_write_metadata_from_packet *write_metadata_from_packet = ofpact_put_WRITE_METADATA_FROM_PACKET(ofpacts);
+
+    char *key, *value;
+    while (ofputil_parse_key_value(&arg, &key, &value)) {
+        char *error = NULL;
+
+        if (!strcmp(key, "metadata_offset")) {
+            error = str_to_u16(value, "metadata_offset", &write_metadata_from_packet->metadata_offset);
+        } else if (!strcmp(key, "packet_offset")) {
+            error = str_to_u16(value, "packet_offset", &write_metadata_from_packet->packet_offset);
+        } else if (!strcmp(key, "field_len")) {
+            error = str_to_u16(value, "field_len", &write_metadata_from_packet->field_len);
+        }else {
+            error = xasprintf("invalid key \"%s\" in \"write_metadata_from_packet\" argument", key);
+        }
+
+        if (error) {
+            return error;
+        }
+
+        return NULL;
+    }
+}
+
 static void
 encode_GOTO_TABLE(const struct ofpact_goto_table *goto_table,
                   enum ofp_version ofp_version, struct ofpbuf *out)
@@ -6995,6 +7064,7 @@ ofpact_is_set_or_move_action(const struct ofpact *a)
     case OFPACT_STRIP_VLAN:
     case OFPACT_WRITE_ACTIONS:
     case OFPACT_WRITE_METADATA:
+    case OFPACT_WRITE_METADATA_FROM_PACKET:
     case OFPACT_DEBUG_RECIRC:
         return false;
     default:
@@ -7072,6 +7142,7 @@ ofpact_is_allowed_in_actions_set(const struct ofpact *a)
     case OFPACT_METER:
     case OFPACT_WRITE_ACTIONS:
     case OFPACT_WRITE_METADATA:
+    case OFPACT_WRITE_METADATA_FROM_PACKET:     /* pjq */
         return false;
     default:
         OVS_NOT_REACHED();
@@ -7234,6 +7305,8 @@ ovs_instruction_type_from_ofpact_type(enum ofpact_type type)
         return OVSINST_OFPIT11_WRITE_ACTIONS;
     case OFPACT_WRITE_METADATA:
         return OVSINST_OFPIT11_WRITE_METADATA;
+    case OFPACT_WRITE_METADATA_FROM_PACKET:      /* pjq */
+        return OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET;
     case OFPACT_GOTO_TABLE:
         return OVSINST_OFPIT11_GOTO_TABLE;
     case OFPACT_OUTPUT:
@@ -7326,6 +7399,7 @@ get_ovsinst_map(enum ofp_version version)
         { OVSINST_OFPIT11_WRITE_ACTIONS, 3 },
         { OVSINST_OFPIT11_APPLY_ACTIONS, 4 },
         { OVSINST_OFPIT11_CLEAR_ACTIONS, 5 },
+        { OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET, 7 }, /* pjq */
         { 0, -1 },
     };
 
@@ -7337,6 +7411,7 @@ get_ovsinst_map(enum ofp_version version)
         { OVSINST_OFPIT11_APPLY_ACTIONS, 4 },
         { OVSINST_OFPIT11_CLEAR_ACTIONS, 5 },
         { OVSINST_OFPIT13_METER, 6 },
+        { OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET, 7 }, /* pjq */
         { 0, -1 },
     };
 
@@ -7655,6 +7730,19 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         om = ofpact_put_WRITE_METADATA(ofpacts);
         om->metadata = oiwm->metadata;
         om->mask = oiwm->metadata_mask;
+    }
+    if (insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]) {     /* pjq */
+        VLOG_INFO("+++++++++++pjq ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET");
+        const struct ofp11_instruction_write_metadata_from_packet *oiwmfp;
+        struct ofpact_write_metadata_from_packet *owm;
+
+        oiwmfp = ALIGNED_CAST(const struct ofp11_instruction_write_metadata_from_packet *,
+                              insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]);
+
+        owm = ofpact_put_WRITE_METADATA_FROM_PACKET(ofpacts);
+        owm->metadata_offset = oiwmfp->metadata_offset;
+        owm->packet_offset = oiwmfp->packet_offset;
+        owm->field_len = owm->field_len;
     }
     if (insts[OVSINST_OFPIT11_GOTO_TABLE]) {
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_GOTO_TABLE");
@@ -8000,6 +8088,9 @@ ofpact_check__(enum ofputil_protocol *usable_protocols, struct ofpact *a,
     }
 
     case OFPACT_WRITE_METADATA:
+        return 0;
+
+    case OFPACT_WRITE_METADATA_FROM_PACKET:    /* pjq */
         return 0;
 
     case OFPACT_METER: {
@@ -8518,6 +8609,7 @@ ofpact_outputs_to_port(const struct ofpact *ofpact, ofp_port_t port)
     case OFPACT_DEC_MPLS_TTL:
     case OFPACT_SET_TUNNEL:
     case OFPACT_WRITE_METADATA:
+    case OFPACT_WRITE_METADATA_FROM_PACKET: /* pjq */
     case OFPACT_SET_QUEUE:
     case OFPACT_POP_QUEUE:
     case OFPACT_FIN_TIMEOUT:

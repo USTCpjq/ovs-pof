@@ -109,6 +109,17 @@ struct pkt_metadata {
                                  * be uninitialized. */
 };
 
+
+/* pjq: Define Metadata structure. */
+struct pofdp_metadata {
+    uint16_t len;
+    uint8_t port_id;
+    uint8_t reserve;
+    uint8_t compRes;
+    uint8_t data[];
+};
+
+
 static inline void
 pkt_metadata_init_tnl(struct pkt_metadata *md)
 {

@@ -569,6 +569,7 @@ static void dp_netdev_execute_actions(struct dp_netdev_pmd_thread *pmd,
                                       bool may_steal, const struct flow *flow,
                                       const struct nlattr *actions,
                                       size_t actions_len,
+									  struct pofdp_metadata_batch *pof_mds,
                                       long long now);
 static void dp_netdev_input(struct dp_netdev_pmd_thread *,
                             struct dp_packet_batch *, odp_port_t port_no);
@@ -2644,6 +2645,7 @@ dpif_netdev_execute(struct dpif *dpif, struct dpif_execute *execute)
     struct dp_netdev *dp = get_dp_netdev(dpif);
     struct dp_netdev_pmd_thread *pmd;
     struct dp_packet_batch pp;
+    struct pofdp_metadata_batch pm;     /* pjq */
 
     if (dp_packet_size(execute->packet) < ETH_HEADER_LEN ||
         dp_packet_size(execute->packet) > UINT16_MAX) {
@@ -2680,6 +2682,7 @@ dpif_netdev_execute(struct dpif *dpif, struct dpif_execute *execute)
     packet_batch_init_packet(&pp, execute->packet);
     dp_netdev_execute_actions(pmd, &pp, false, execute->flow,
                               execute->actions, execute->actions_len,
+							  &pm,
                               time_msec());
 
     if (pmd->core_id == NON_PMD_CORE_ID) {
@@ -3915,7 +3918,6 @@ struct packet_batch_per_flow {
     unsigned int byte_count;
     uint16_t tcp_flags;
     struct dp_netdev_flow *flow;
-
     struct dp_packet_batch array;
 };
 
@@ -3962,6 +3964,8 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     struct dp_netdev_actions *actions;
     struct dp_netdev_flow *flow = batch->flow;
     struct bandwidth_info *bd_info = &(pmd->bd_info);
+
+    struct pofdp_metadata_batch *pof_mds;   /* pjq */
 
     /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: before dp_netdev_flow_used");*/
     dp_netdev_flow_used(flow, batch->array.count, batch->byte_count,
@@ -4019,7 +4023,7 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     }
 
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
-                              actions->actions, actions->size, now);
+                              actions->actions, actions->size, pof_mds, now);
 }
 
 static inline void
@@ -4124,6 +4128,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
 {
     struct ofpbuf *add_actions;
     struct dp_packet_batch b;
+    struct pofdp_metadta_batch *pof_mds;    /* pjq */
     struct match match;
     ovs_u128 ufid;
     int error;
@@ -4161,7 +4166,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
      * we'll send the packet up twice. */
     packet_batch_init_packet(&b, packet);
     dp_netdev_execute_actions(pmd, &b, true, &match.flow,
-                              actions->data, actions->size, now);
+                              actions->data, actions->size, pof_mds, now);
 
     add_actions = put_actions->size ? put_actions : actions;
     if (OVS_LIKELY(error != ENOSPC)) {
@@ -4509,6 +4514,7 @@ dp_execute_userspace_action(struct dp_netdev_pmd_thread *pmd,
                             const struct nlattr *userdata, long long now)
 {
     struct dp_packet_batch b;
+    struct pofdp_metadata_batch pof_mds;
     int error;
 
     ofpbuf_clear(actions);
@@ -4519,7 +4525,7 @@ dp_execute_userspace_action(struct dp_netdev_pmd_thread *pmd,
     if (!error || error == ENOSPC) {
         packet_batch_init_packet(&b, packet);
         dp_netdev_execute_actions(pmd, &b, may_steal, flow,
-                                  actions->data, actions->size, now);
+                                  actions->data, actions->size, &pof_mds, now);
     } else if (may_steal) {
         dp_packet_delete(packet);
     }
@@ -4761,12 +4767,13 @@ dp_netdev_execute_actions(struct dp_netdev_pmd_thread *pmd,
                           struct dp_packet_batch *packets,
                           bool may_steal, const struct flow *flow,
                           const struct nlattr *actions, size_t actions_len,
+                          struct pofdp_metadata_batch *pof_mds,
                           long long now)
 {
     struct dp_netdev_execute_aux aux = { pmd, now, flow };
 
     odp_execute_actions(&aux, packets, may_steal, actions,
-                        actions_len, dp_execute_cb,
+                        actions_len, dp_execute_cb, pof_mds,
                         &(pmd->bd_info));
 }
 

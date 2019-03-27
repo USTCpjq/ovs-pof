@@ -1202,12 +1202,13 @@ dpif_execute_with_help(struct dpif *dpif, struct dpif_execute *execute)
 {
     struct dpif_execute_helper_aux aux = {dpif, execute->flow, 0};
     struct dp_packet_batch pb;
+    struct pofdp_metadata_batch pm;
 
     COVERAGE_INC(dpif_execute_with_help);
 
     packet_batch_init_packet(&pb, execute->packet);
     odp_execute_actions(&aux, &pb, false, execute->actions,
-                        execute->actions_len, dpif_execute_helper_cb, NULL);
+                        execute->actions_len, dpif_execute_helper_cb, &pm, NULL);
     return aux.error;
 }
 

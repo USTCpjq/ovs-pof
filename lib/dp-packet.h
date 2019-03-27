@@ -628,6 +628,12 @@ struct dp_packet_batch {
     struct dp_packet *packets[NETDEV_MAX_BURST];
 };
 
+/*  pjq   */
+struct pofdp_metadata_batch {
+    int count;
+    struct pofdp_metadata *pof_mds[NETDEV_MAX_BURST];
+};
+
 static inline void dp_packet_batch_init(struct dp_packet_batch *b)
 {
     b->count = 0;

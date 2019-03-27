@@ -42,6 +42,7 @@
 
 #include <linux/types.h>
 #include <linux/if_ether.h>
+#include <stdint-gcc.h>
 
 /**
  * struct ovs_header - header for OVS Generic Netlink messages.
@@ -360,6 +361,13 @@ struct ovs_key_delete_field {
 	uint16_t len_type;
 };
 
+/* pjq */
+struct ovs_key_write_metadata_from_packet {
+	ovs_be16  metadata_offset;
+	uint16_t  packet_offset;
+	uint16_t  field_len;
+};
+
 enum ovs_key_attr {
 	OVS_KEY_ATTR_UNSPEC,
 	OVS_KEY_ATTR_ENCAP,	/* Nested set of encapsulated attributes. */
@@ -394,6 +402,7 @@ enum ovs_key_attr {
 	OVS_KEY_ATTR_MODIFY_FIELD, /* tsf: modify_field action in pof */
 	OVS_KEY_ATTR_ADD_FIELD,    /* tsf: add_field action in pof */
 	OVS_KEY_ATTR_DELETE_FIELD, /* tsf: delete_field action in pof */
+	OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET, /* pjq: write_metadata_from_packet instruction in pof */
 
 #ifdef __KERNEL__
 	/* Only used within kernel data path. */

@@ -3803,6 +3803,7 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
                           const uint8_t *userdata, size_t userdata_len)
 {
     struct dp_packet_batch batch;
+    struct pofdp_metadata_batch pm;
     struct dp_packet *packet;
 
     /*VLOG_INFO("++++++tsf execute_controller_action: begin");*/
@@ -3820,7 +3821,7 @@ execute_controller_action(struct xlate_ctx *ctx, int len,
     packet = dp_packet_clone(ctx->xin->packet);
     packet_batch_init_packet(&batch, packet);
     odp_execute_actions(NULL, &batch, false,
-                        ctx->odp_actions->data, ctx->odp_actions->size, NULL, NULL);
+                        ctx->odp_actions->data, ctx->odp_actions->size, NULL, &pm, NULL);
 
     /* A packet sent by an action in a table-miss rule is considered an
      * explicit table miss.  OpenFlow before 1.3 doesn't have that concept so
@@ -4660,6 +4661,7 @@ freeze_unroll_actions(const struct ofpact *a, const struct ofpact *end,
         case OFPACT_STACK_POP:
         case OFPACT_LEARN:
         case OFPACT_WRITE_METADATA:
+        case OFPACT_WRITE_METADATA_FROM_PACKET:  /* pjq */
         case OFPACT_GOTO_TABLE:
         case OFPACT_ENQUEUE:
         case OFPACT_SET_VLAN_VID:
@@ -4995,6 +4997,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     const struct ofpact_drop *drop;
     const struct ofpact_modify_field *modify_field;
     const struct ofpact_delete_field *delete_field;
+    const struct ofpact_write_metadata_from_packet *write_metadata_from_packet;  /* pjq */
     const struct mf_field *mf;
 
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
@@ -5127,6 +5130,16 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
         		return;
         	}
         	break;
+
+       	case OFPACT_WRITE_METADATA_FROM_PACKET: {              /* pjq */
+            write_metadata_from_packet = ofpact_get_WRITE_METADATA_FROM_PACKET(a);
+            flow->offset[action_num] = htons(write_metadata_from_packet->packet_offset);
+            flow->len[action_num] = htons(write_metadata_from_packet->field_len);
+            flow->flag[action_num] = OFPACT_WRITE_METADATA_FROM_PACKET;
+            memcpy(flow->value[action_num], write_metadata_from_packet->metadata_offset,
+                   sizeof(write_metadata_from_packet->metadata_offset) );
+       	    }
+       	    break;
 
         case OFPACT_EXIT:
             ctx->exit = true;
