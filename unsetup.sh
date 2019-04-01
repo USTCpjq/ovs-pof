@@ -1,6 +1,6 @@
 #set -e
 
-cd ~/OpenvSwitch-pof/
+cd ~/OpenvSwitch-pof
 
 
 #ovs-vsctl del-br br0
@@ -18,9 +18,9 @@ sleep 1s
 cd  ~/dpdk-16.07
 
 echo "Unbind dpdk drivers and bind drivers back to original ..."
-./tools/dpdk-devbind.py --bind=i40e 0000:05:00.0
-./tools/dpdk-devbind.py --bind=i40e 0000:05:00.1
-./tools/dpdk-devbind.py --bind=i40e 0000:05:00.2
+./tools/dpdk-devbind.py --bind=i40e 0000:2f:00.1
+#./tools/dpdk-devbind.py --bind=i40e 0000:af:00.1
+#./tools/dpdk-devbind.py --bind=i40e 0000:2f:00.2
 #./tools/dpdk-devbind.py --bind=igb 0000:07:00.0
 #./tools/dpdk-devbind.py --bind=igb 0000:07:00.1
 

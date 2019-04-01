@@ -19,16 +19,11 @@ fi
 # For IVSHMEM, Set `export DPDK_TARGET=x86_64-ivshmem-linuxapp-gcc`
 
 cd $HOME
-export OVS_DIR=$HOME/OpenvSwitch-pof/
+export OVS_DIR=$HOME/OpenvSwitch-pof
 cd $OVS_DIR
 #./boot.sh                           ## run once when first run
-
-## configure, can use '-march=native' accelerate ovs-pof packet processing
 #./configure --with-dpdk=$DPDK_BUILD
-# ./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD  ## way1: use 'dpdk', with lower performance
-./configure CFLAGS="-g -O2 -march=native" --with-dpdk=$DPDK_BUILD  ## way2: use 'dpdk' and 'native' to accelerate processor, decreases hash times. with higher performance
-
-## compilation and install
+./configure CFLAGS="-g -O0" --with-dpdk=$DPDK_BUILD
 make -j24
 make install
 
@@ -46,7 +41,7 @@ mount -t hugetlbfs none /dev/hugepages
 #   sudo /usr/bin/chmod a+x /dev/vfio
 #    sudo /usr/bin/chmod 0666 /dev/vfio/*
 cd $DPDK_DIR
-modprobe uio_pci_generic
+#modprobe uio_pci_generic
 
 # for i40e, run only once
 #sudo modprobe uio
@@ -64,11 +59,11 @@ modprobe uio_pci_generic
 #  sudo ./tools/dpdk-devbind.py --bind=uio_pci_generic ${port[$i]}
 #done
 
-##  IPL211, sfp for bigtao test (high speed), ethx for ostinato test (low speed)
-./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.0  # sfp R1
-./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.1  # sfp R2
-./tools/dpdk-devbind.py --bind=igb_uio 0000:05:00.2  # sfp R3
-#./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.0 # eth1
+##  IPL228, sfp for bigtao test (high speed), ethx for ostinato test (low speed)
+./tools/dpdk-devbind.py --bind=igb_uio 0000:2f:00.1  # sfp R1, port1
+#./tools/dpdk-devbind.py --bind=igb_uio 0000:af:00.1  # sfp R2, port2
+# ./tools/dpdk-devbind.py --bind=igb_uio 0000:2f:00.2  # sfp R3, port3
+
 #./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
 ./tools/dpdk-devbind.py --status
 echo "DPDK Environment Success"
@@ -90,11 +85,11 @@ ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
 ovs-vsctl --no-wait init
 export DB_SOCK=/usr/local/var/run/openvswitch/db.sock
 ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-init=true
-
+ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,1024"
 sleep 1s
 ovs-vswitchd unix:$DB_SOCK --pidfile --detach
-#     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,0"  ## for multiple threads across cores.
-#     ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,1024"
+#ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,1"  ## for multiple threads across cores.
+#ovs-vsctl --no-wait set Open_vSwitch . other_config:dpdk-socket-mem="1024,1024"
 #     ovs-vswitchd unix:$DB_SOCK --pidfile --detach
 #     ovs-vsctl set Open_vSwitch . other_config:pmd-cpu-mask=6
 ovs-appctl vlog/set ANY:ANY:INFO
@@ -103,13 +98,13 @@ ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
 
 #ovs-vsctl set-controller br0 tcp:192.168.109.209:6666
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
-ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
-ovs-vsctl add-port br0 dpdk2 -- set Interface dpdk2 type=dpdk
+#ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
+#ovs-vsctl add-port br0 dpdk2 -- set Interface dpdk2 type=dpdk
 #ovs-ofctl show br0
 sleep 1s
 
 ## set datapath-id of ovs, must be 8B decimal number, cannot omit zeros.
-ovs-vsctl set bridge br0 other-config:datapath-id=0000000000000002
+ovs-vsctl set bridge br0 other-config:datapath-id=0000000000000005
 
 #ovs-appctl -t ovs-vswitchd exit
 #ovs-vswitchd --pidfile
