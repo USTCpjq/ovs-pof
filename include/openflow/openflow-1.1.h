@@ -354,10 +354,11 @@ OFP_ASSERT(sizeof(struct ofp11_instruction_write_metadata) == 24);
 struct ofp11_instruction_write_metadata_from_packet {
     ovs_be16 type;              /* OFPIT_WRITE_METADATA_FROM_PACKET */
     ovs_be16 len;               /* Length of this struct in bytes. */
+    uint8_t pad4[4];
     ovs_be16  metadata_offset;  /* start location of metadata to store packet_field*/
     ovs_be16  packet_offset;   /* start location from packet to read packet_field */
     ovs_be16  field_len;       /* lenth to write to metadata. */
-    uint8_t pad[6];            /* Align to 64-bits */
+    uint8_t pad2[2];            /* Align to 64-bits */
 
 };
 OFP_ASSERT(sizeof(struct ofp11_instruction_write_metadata_from_packet) == 16);

@@ -7491,7 +7491,7 @@ decode_openflow11_instruction(const struct ofp11_instruction *inst,
                               enum ovs_instruction_type *type)
 {
     uint16_t len = 304;
-VLOG_INFO("+++++++++++sqy decode_openflow11_instruction:start");
+VLOG_INFO("+++++++++++sqy decode_openflow11_instruction:start  ovs_instrucion_type:%d", inst->type);
     switch (inst->type) {
     case CONSTANT_HTONS(OFPIT11_EXPERIMENTER):
         return OFPERR_OFPBIC_BAD_EXPERIMENTER;
@@ -7502,11 +7502,13 @@ VLOG_INFO("+++++++++++sqy decode_openflow11_instruction:start");
                 ? len >= sizeof(struct STRUCT)          \
                 : len == sizeof(struct STRUCT)) {       \
                 *type = OVSINST_##ENUM;                 \
+                VLOG_INFO("++++++pjq EXTENSIBLE:%d    len:%d     sizeof(struct STRUCT", EXTENSIBLE, len, sizeof(struct STRUCT)); \
                 return 0;                               \
             } else {                                    \
                 return OFPERR_OFPBIC_BAD_LEN;           \
             }
 OVS_INSTRUCTIONS
+
 #undef DEFINE_INST
 
     default:
@@ -7560,8 +7562,11 @@ decode_openflow11_instructions(const struct ofp11_instruction insts[],
         enum ovs_instruction_type type;
         enum ofperr error;
 
+        VLOG_INFO("+++++++pjq type:%d", OFPACT_WRITE_METADATA_FROM_PACKET);
+        VLOG_INFO("+++++++pjq ofp11_instruction->type: %d,  len:%d", inst->type, inst->len);
+        //VLOG_INFO("+++++++pjq ofp11_instruction insts[0]->type: %d,  len:%d", insts[0].type, insts[0].len);
         error = decode_openflow11_instruction(inst, &type);
-        VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: after decode_openflow11_instruction");
+        VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: after decode_openflow11_instruction  type :%d", type);
         if (error) {
             return error;
         }
