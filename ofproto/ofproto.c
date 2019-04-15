@@ -5986,9 +5986,9 @@ handle_flow_mod(struct ofconn *ofconn, const struct ofp_header *oh)
                                     ofproto->n_tables);
     if (!error) {
         struct openflow_mod_requester req = { ofconn, oh };
-        //VLOG_INFO("+++++++++++sqy handle_flow_mod: before handle_flow_mod_pof__");
+        VLOG_INFO("+++++++++++sqy handle_flow_mod: before handle_flow_mod_pof__");
         error = handle_flow_mod_pof__(ofproto, &fm, &req);
-        //VLOG_INFO("+++++++++++sqy handle_flow_mod: after handle_flow_mod_pof__");
+        VLOG_INFO("+++++++++++sqy handle_flow_mod: after handle_flow_mod_pof__");
     }
 
     ofpbuf_uninit(&ofpacts);

@@ -1741,7 +1741,9 @@ ofp_print_pof_flow_stats(struct ds *string, struct ofputil_pof_flow_stats *fs)
     }
 
     ds_put_format(string, "%sactions=%s", colors.actions, colors.end);
+    VLOG_INFO("++++++++pjq before ofpacts_format");
     ofpacts_format(fs->ofpacts, fs->ofpacts_len, string);
+    VLOG_INFO("++++++++pjq after ofpacts_format");
 }
 
 static void
@@ -1771,6 +1773,28 @@ ofp_print_flow_stats_reply(struct ds *string, const struct ofp_header *oh)
 static void
 ofp_print_pof_flow_stats_reply(struct ds *string, const struct ofp_header *oh)
 {
+    VLOG_INFO("+++++ pjq oh->version:%d,   oh->type:%d,    oh->length:%d", oh->version, oh->type, oh->length);
+    VLOG_INFO("++++++ pjq some value of enum constant");
+    VLOG_INFO("+++++  OFPTYPE_FLOW_STATS_REQUEST:%d", OFPTYPE_FLOW_STATS_REQUEST);
+    VLOG_INFO("+++++  OFPTYPE_FLOW_STATS_REPLY:%d", OFPTYPE_FLOW_STATS_REPLY);
+    VLOG_INFO("+++++  OFPTYPE_AGGREGATE_STATS_REQUEST:%d", OFPTYPE_AGGREGATE_STATS_REQUEST);
+    VLOG_INFO("+++++  OFPTYPE_AGGREGATE_STATS_REPLY:%d", OFPTYPE_AGGREGATE_STATS_REPLY);
+    VLOG_INFO("+++++  OFPTYPE_TABLE_STATS_REQUEST:%d", OFPTYPE_TABLE_STATS_REQUEST);
+    VLOG_INFO("+++++  OFPTYPE_TABLE_STATS_REPLY:%d", OFPTYPE_TABLE_STATS_REPLY);
+
+    VLOG_INFO("+++++  OFPRAW_OFPST10_FLOW_REPLY:%d", OFPRAW_OFPST10_FLOW_REPLY);
+    VLOG_INFO("+++++  OFPRAW_OFPST11_FLOW_REPLY:%d", OFPRAW_OFPST11_FLOW_REPLY);
+    VLOG_INFO("+++++  OFPRAW_NXST_FLOW_REPLY:%d", OFPRAW_NXST_FLOW_REPLY);
+    VLOG_INFO("+++++  OFPRAW_OFPST10_AGGREGATE_REQUEST:%d", OFPRAW_OFPST10_AGGREGATE_REQUEST);
+    VLOG_INFO("+++++  OFPRAW_OFPST11_AGGREGATE_REQUEST:%d", OFPRAW_OFPST11_AGGREGATE_REQUEST);
+    VLOG_INFO("+++++  OFPRAW_OFPST_AGGREGATE_REPLY:%d", OFPRAW_OFPST_AGGREGATE_REPLY);
+    VLOG_INFO("+++++  OFPRAW_NXST_AGGREGATE_REPLY:%d", OFPRAW_NXST_AGGREGATE_REPLY);
+
+    VLOG_INFO("+++++  OFPRAW_OFPST_TABLE_REQUEST:%d", OFPRAW_OFPST_TABLE_REQUEST);
+    VLOG_INFO("+++++  OFPRAW_OFPST10_TABLE_REPLY:%d", OFPRAW_OFPST10_TABLE_REPLY);
+    VLOG_INFO("+++++  OFPRAW_OFPST11_TABLE_REPLY:%d", OFPRAW_OFPST11_TABLE_REPLY);
+
+
     struct ofpbuf b = ofpbuf_const_initializer(oh, ntohs(oh->length));
     struct ofpbuf ofpacts;
 
@@ -1779,15 +1803,20 @@ ofp_print_pof_flow_stats_reply(struct ds *string, const struct ofp_header *oh)
         struct ofputil_pof_flow_stats fs;
         int retval;
 
+        VLOG_INFO("+++++++ pjq before ofputil_decode_pof_flow_stats_reply");
         retval = ofputil_decode_pof_flow_stats_reply(&fs, &b, true, &ofpacts);
+        VLOG_INFO("+++++++ pjq after ofputil_decode_pof_flow_stats_reply");
+        VLOG_INFO("+++++++ pjq retval:%d",retval);
         if (retval) {
             if (retval != EOF) {
                 ds_put_cstr(string, " ***parse error sqy***");
             }
+            VLOG_INFO("++++++pjq break diao le");
             break;
         }
         ds_put_char(string, '\n');
         ofp_print_pof_flow_stats(string, &fs);
+        VLOG_INFO("++++++pjq after ofp_print_pof_flow_stats");
      }
     ofpbuf_uninit(&ofpacts);
 }
@@ -3451,6 +3480,11 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
 
     ofp_header_to_string__(oh, raw, string);
     enum ofptype type = ofptype_from_ofpraw(raw);
+    VLOG_INFO("+++++++ pjq raw:%d", raw);
+    VLOG_INFO("+++++++ pjq OFPRAW_NXST_FLOW_REPLY:%d", OFPRAW_NXST_FLOW_REPLY);
+    if (type == OFPTYPE_FLOW_STATS_REPLY) {
+        VLOG_INFO("++++++ pjq type is OFPTYPE_FLOW_STATS_REPLY:%d", OFPTYPE_FLOW_STATS_REPLY);
+    }
     switch (type) {
     case OFPTYPE_GROUP_STATS_REQUEST:
         ofp_print_stats(string, oh);
@@ -3640,7 +3674,7 @@ ofp_to_string__(const struct ofp_header *oh, enum ofpraw raw,
 
     case OFPTYPE_FLOW_STATS_REPLY:
         ofp_print_stats(string, oh);
-        /*VLOG_INFO("+++++++++++sqy ofp_to_string__: OFPTYPE_FLOW_STATS_REPLY ");*/
+        VLOG_INFO("+++++++++++sqy ofp_to_string__: OFPTYPE_FLOW_STATS_REPLY ");
         ofp_print_pof_flow_stats_reply(string, oh);
         break;
 
@@ -3763,7 +3797,9 @@ ofp_to_string(const void *oh_, size_t len, int verbosity)
 {
     struct ds string = DS_EMPTY_INITIALIZER;
     const struct ofp_header *oh = oh_;
-    /*VLOG_INFO("+++++++++++sqy ofp_to_string: start ");*/
+    VLOG_INFO("+++++++++++sqy ofp_to_string: start ");
+    VLOG_INFO("+++++ pjq oh->version:%d,   oh->type:%d,    oh->length:%d", oh->version, oh->type, oh->length);
+    //VLOG_INFO("+++++ pjq OFPT_FEATURES_REQUEST:%d", OFPT_FEATURES_REQUEST);
     if (!len) {
         ds_put_cstr(&string, "OpenFlow message is empty\n");
     } else if (len < sizeof(struct ofp_header)) {
@@ -3794,7 +3830,9 @@ ofp_to_string(const void *oh_, size_t len, int verbosity)
 
         error = ofpraw_decode(&raw, oh);
         if (!error) {
+            VLOG_INFO("++++++pjq before ofp_to_string__");
             ofp_to_string__(oh, raw, &string, verbosity);
+            VLOG_INFO("++++++pjq after ofp_to_string__");
             if (verbosity >= 5) {
                 if (ds_last(&string) != '\n') {
                     ds_put_char(&string, '\n');

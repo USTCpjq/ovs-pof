@@ -110,13 +110,15 @@ struct pkt_metadata {
 };
 
 
+#define POFDP_METADATA_MAX_LEN (128)
+
 /* pjq: Define Metadata structure. */
 struct pofdp_metadata {
     uint16_t len;
     uint8_t port_id;
     uint8_t reserve;
     uint8_t compRes;
-    uint8_t data[];
+    uint8_t data[POFDP_METADATA_MAX_LEN - 5];
 };
 
 

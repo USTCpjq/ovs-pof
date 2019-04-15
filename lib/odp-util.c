@@ -5827,10 +5827,10 @@ commit_pof_write_metadata_from_packet_action(const struct flow *flow, struct flo
 
     get_pof_write_metadata_from_packet_mask(pflow, &mask, index);
 
-    /*VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: before pof_commit");*/
+    VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: before pof_commit");
     if (pof_commit(OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET, use_masked,
                    &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //pjq notes: commit return false, no run
-        /*VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: after pof_commit");*/
+        VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: after pof_commit");
         put_pof_write_metadata_from_packet_key(&base, base_flow, index);
         put_pof_write_metadata_from_packet_key(&mask, &wc->masks, index);
     }
@@ -5841,7 +5841,7 @@ get_pof_write_metadata_from_packet_key(const struct pof_flow *flow, struct ovs_k
 {
     eth->packet_offset = ntohs(flow->offset[index]);
     eth->field_len = ntohs(flow->len[index]);
-    memcpy(eth->metadata_offset, flow->value[index], sizeof(flow->value[index]));
+    memcpy(&eth->metadata_offset, flow->value[index], sizeof(eth->metadata_offset));
 }
 
 static void
@@ -5849,7 +5849,7 @@ get_pof_write_metadata_from_packet_mask(const struct pof_flow *flow, struct ovs_
 {
     eth->packet_offset = ntohs(flow->offset[index]);
     eth->field_len = ntohs(flow->len[index]);
-    memcpy(eth->metadata_offset, flow->value[index], sizeof(flow->value[index]));
+    memcpy(&eth->metadata_offset, flow->value[index], sizeof(eth->metadata_offset));
 }
 
 static void
@@ -5857,7 +5857,7 @@ put_pof_write_metadata_from_packet_key(const struct ovs_key_write_metadata_from_
 {
     flow->offset[index] =htons(eth->packet_offset);
     flow->len[index] = htons(eth->field_len);
-    memcpy(flow->value[index], eth->metadata_offset, sizeof(eth->metadata_offset));
+    memcpy(flow->value[index], &eth->metadata_offset, sizeof(eth->metadata_offset));
 }
 
 static void
@@ -5873,32 +5873,32 @@ commit_pof_action(const struct flow *flow, struct flow *base_flow,
 
 	while (i < 8) {
 		action_flag = pflow->flag[i];
-		/*VLOG_INFO("++++++tsf commit_pof_action: action_flag[%d]=%d", i, action_flag);*/
+		VLOG_INFO("++++++tsf commit_pof_action: action_flag[%d]=%d", i, action_flag);
 
 		switch (action_flag) {
 
 			case OFPACT_SET_FIELD:      // flag == 7
-				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");*/
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_set_field_action.");
 				commit_pof_set_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
 			case OFPACT_MODIFY_FIELD:    // flag == 8
-				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");*/
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_modify_field_action.");
 				commit_pof_modify_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
 			case OFPACT_ADD_FIELD:       // flag == 9
-				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");*/
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_add_field_action.");
 				commit_pof_add_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
 			case OFPACT_DELETE_FIELD:    // flag == 10
-				/*VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");*/
+				VLOG_INFO("++++++tsf commit_pof_action: commit_pof_delete_field_action.");
 				commit_pof_delete_field_action(flow, base_flow, odp_actions, wc, use_masked, i);
 				break;
 
 		    case OFPACT_WRITE_METADATA_FROM_PACKET:
-                /*VLOG_INFO("++++++pjq commit_pof_action: commit_pof_write_metadata_from_packet_action.");*/
+                VLOG_INFO("++++++pjq commit_pof_action: commit_pof_write_metadata_from_packet_action.");
                 commit_pof_write_metadata_from_packet_action(flow, base_flow, odp_actions, wc, use_masked, i);
                 break;
 		}
@@ -6417,6 +6417,7 @@ commit_odp_actions(const struct flow *flow, struct flow *base,
      *      there is no need to commit the original ovs actions. commit_set_priority_action may be
      *      useful, keep teporarily.
      * */
+    VLOG_INFO("+++++ pjq before commit_pof_action");
     commit_pof_action(flow, base, odp_actions, wc, use_masked);
 
 //    commit_set_ether_addr_action(flow, base, odp_actions, wc, use_masked);

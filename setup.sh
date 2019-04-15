@@ -60,8 +60,8 @@ cd $DPDK_DIR
 #done
 
 ##  IPL228, sfp for bigtao test (high speed), ethx for ostinato test (low speed)
-./tools/dpdk-devbind.py --bind=igb_uio 0000:2f:00.1  # sfp R1, port1
-#./tools/dpdk-devbind.py --bind=igb_uio 0000:af:00.1  # sfp R2, port2
+./tools/dpdk-devbind.py --bind=igb_uio 0000:08:00.2  # sfp R1, port1
+./tools/dpdk-devbind.py --bind=igb_uio 0000:08:00.3  # sfp R2, port2
 # ./tools/dpdk-devbind.py --bind=igb_uio 0000:2f:00.2  # sfp R3, port3
 
 #./tools/dpdk-devbind.py --bind=uio_pci_generic 0000:07:00.1 # eth2
@@ -98,7 +98,7 @@ ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
 
 #ovs-vsctl set-controller br0 tcp:192.168.109.209:6666
 ovs-vsctl add-port br0 dpdk0 -- set Interface dpdk0 type=dpdk
-#ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
+ovs-vsctl add-port br0 dpdk1 -- set Interface dpdk1 type=dpdk
 #ovs-vsctl add-port br0 dpdk2 -- set Interface dpdk2 type=dpdk
 #ovs-ofctl show br0
 sleep 1s

@@ -1127,6 +1127,8 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
 
     xlate_actions(&xin, &upcall->xout);
 
+    VLOG_INFO("++++++ pjq after xlate_actions");
+
     if (wc) {
         /* Convert the input port wildcard from OFP to ODP format. There's no
          * real way to do this for arbitrary bitmasks since the numbering spaces
@@ -1228,7 +1230,7 @@ upcall_cb(const struct dp_packet *packet, const struct flow *flow, ovs_u128 *ufi
     /*VLOG_INFO("++++++++tsf upcall_cb: has_group_action=%d, wc.addr=%lx", wc->masks.have_group_action, wc);*/
     error = process_upcall(udpif, &upcall, actions, wc);
     if (error) {
-        /*VLOG_INFO("+++++++++++sqy upcall_cb: error process_upcall");*/
+        VLOG_INFO("+++++++++++sqy upcall_cb: error process_upcall");
         goto out;
     }
 

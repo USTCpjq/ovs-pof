@@ -640,6 +640,11 @@ static inline void dp_packet_batch_init(struct dp_packet_batch *b)
     b->trunc = false;
 }
 
+static inline void pofdp_metadata_batch_init(struct pofdp_metadata_batch *b)
+{
+    b->count = 0;
+}
+
 static inline void
 dp_packet_batch_clone(struct dp_packet_batch *dst,
                       struct dp_packet_batch *src)

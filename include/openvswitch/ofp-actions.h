@@ -1196,7 +1196,7 @@ struct ofpact_set_field *ofpact_put_reg_load2(struct ofpbuf *ofpacts,
                 "write_metadata")                           \
                                                             \
     DEFINE_INST(OFPIT11_WRITE_METADATA_FROM_PACKET,                     \
-                ofp11_instruction_write_metadata_from_packet, false,    \
+                ofp11_instruction_write_metadata_from_packet, true,    \
                 "write_metadata_from_packet")                           \
                                                             \
     DEFINE_INST(OFPIT11_GOTO_TABLE,                         \

@@ -103,6 +103,8 @@ enum ofp_raw_action_type {
 /* ## Standard actions. ## */
 /* ## ----------------- ## */
 
+
+
     /* OF1.0(0): struct ofp10_action_output. */
     OFPAT_RAW10_OUTPUT,
     /* OF1.1+(0): struct ofp11_action_output. */
@@ -120,12 +122,18 @@ enum ofp_raw_action_type {
     /* OF1.0+(5): struct ofp10_action_delete_field. */
     OFPAT_RAW10_DELETE_FIELD,
 
+    /* OF1.0+(7): struct ofp11_instruction_write_metadata_from_packet. */
+    OFPAT_RAW10_WRITE_METADATA_FROM_PACKET,
+
+
+
     /* OF1.0(25): uint16_t. */
     OFPAT_RAW10_SET_VLAN_VID,
     /* OF1.0(2): uint8_t. */
     OFPAT_RAW10_SET_VLAN_PCP,
 
     /* OF1.1(25), OF1.2+(25) is deprecated (use Set-Field): uint16_t.
+     *
      *
      * [Semantics differ slightly between the 1.0 and 1.1 versions of the VLAN
      * modification actions: the 1.0 versions push a VLAN header if none is
@@ -176,6 +184,7 @@ enum ofp_raw_action_type {
      * ovs_be16. */
     OFPAT_RAW_SET_TP_DST,
 
+
     /* OF1.0(11): struct ofp10_action_enqueue. */
     OFPAT_RAW10_ENQUEUE,
 
@@ -208,7 +217,7 @@ enum ofp_raw_action_type {
     /* NX1.0(4), OF1.1+(21): uint32_t. */
     OFPAT_RAW_SET_QUEUE,
 
-    /* NX1.0(40), OF1.0+(7): uint32_t. */
+    /* NX1.0(40), OF1.0+(70): uint32_t. */
     OFPAT_RAW_GROUP,
 
     /* OF1.1+(23): uint8_t. */
@@ -6680,7 +6689,7 @@ format_WRITE_METADATA(const struct ofpact_metadata *a, struct ds *s)
  *
  *  */
 static enum ofperr
-decode_WRITE_METADATA_FROM_PACKET(const struct ofp11_instruction_write_metadata_from_packet *oiwmfp,
+decode_OFPAT_RAW10_WRITE_METADATA_FROM_PACKET(const struct ofp11_instruction_write_metadata_from_packet *oiwmfp,
                                   enum ofp_version ofp_version OVS_UNUSED,
                                   struct ofpbuf *out)
 {
@@ -6689,6 +6698,13 @@ decode_WRITE_METADATA_FROM_PACKET(const struct ofp11_instruction_write_metadata_
     owmfp->metadata_offset = ntohs(oiwmfp->metadata_offset);
     owmfp->packet_offset = ntohs(oiwmfp->packet_offset);
     owmfp->field_len = ntohs(oiwmfp->field_len);
+
+    VLOG_INFO("+++++ pjq metadata_offset:%d, packet_offset:%d, field_len:%d", owmfp->metadata_offset,
+               owmfp->packet_offset, owmfp->field_len);
+
+
+
+    return 0;
 }
 
 /* pjq
@@ -6857,6 +6873,10 @@ ofpacts_decode(const void *actions, size_t actions_len,
         /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_pull_raw");*/
         VLOG_INFO("++++++tsf: ofpacts_decode: before ofpact_pull_raw, in openflow");
         error = ofpact_pof_pull_raw(&openflow, ofp_version, &raw, &arg);
+
+        VLOG_INFO("++++++ pjq raw:%d, OFPAT_RAW10_WRITE_METADATA_FROM_PACKET:%d", raw, OFPAT_RAW10_WRITE_METADATA_FROM_PACKET);
+
+
         if (!error) {
             /*VLOG_INFO("+++++++++++sqy ofpacts_decode: before ofpact_decode");*/
             error = ofpact_decode(action, raw, ofp_version, arg, ofpacts);
@@ -6890,6 +6910,13 @@ ofpacts_pull_openflow_actions__(struct ofpbuf *openflow,
         return OFPERR_OFPBRC_BAD_LEN;
     }
 
+    struct ds s;
+    ds_init(&s);
+    ds_put_hex_dump(&s, openflow->data, openflow->size, 0, false);
+    VLOG_INFO("++++++ pjq openflow->size:%d", openflow->size);
+    VLOG_INFO("+++++ pjq openflow:\n%s", ds_cstr(&s));
+    ds_destroy(&s);
+
     actions = ofpbuf_try_pull(openflow, actions_len);
     if (actions == NULL) {
         VLOG_WARN_RL(&rl, "OpenFlow message actions length %u exceeds "
@@ -6897,6 +6924,19 @@ ofpacts_pull_openflow_actions__(struct ofpbuf *openflow,
                      actions_len, openflow->size);
         return OFPERR_OFPBRC_BAD_LEN;
     }
+
+
+    ds_init(&s);
+    ds_put_hex_dump(&s, openflow->data, openflow->size, 0, false);
+    VLOG_INFO("++++++ pjq openflow->size:%d", openflow->size);
+    VLOG_INFO("+++++ pjq openflow:\n%s", ds_cstr(&s));
+    ds_destroy(&s);
+
+
+    ds_init(&s);
+    ds_put_hex_dump(&s, actions, actions_len, 0, false);
+    VLOG_INFO("+++++ pjq actions:\n%s", ds_cstr(&s));
+    ds_destroy(&s);
 
     VLOG_INFO("++++++tsf ofpacts_pull_openflow_actions__, before ofpacts_decode in OF1.0");
     error = ofpacts_decode(actions, actions_len, version, ofpacts);
@@ -7502,7 +7542,7 @@ VLOG_INFO("+++++++++++sqy decode_openflow11_instruction:start  ovs_instrucion_ty
                 ? len >= sizeof(struct STRUCT)          \
                 : len == sizeof(struct STRUCT)) {       \
                 *type = OVSINST_##ENUM;                 \
-                VLOG_INFO("++++++pjq EXTENSIBLE:%d    len:%d     sizeof(struct STRUCT", EXTENSIBLE, len, sizeof(struct STRUCT)); \
+                VLOG_INFO("++++++pjq EXTENSIBLE:%d    len:%d     sizeof(struct STRUCT):%d, CONSTANT_HTONS(ENUM):%d", EXTENSIBLE, len, sizeof(struct STRUCT), CONSTANT_HTONS(ENUM)); \
                 return 0;                               \
             } else {                                    \
                 return OFPERR_OFPBIC_BAD_LEN;           \
@@ -7562,7 +7602,11 @@ decode_openflow11_instructions(const struct ofp11_instruction insts[],
         enum ovs_instruction_type type;
         enum ofperr error;
 
-        VLOG_INFO("+++++++pjq type:%d", OFPACT_WRITE_METADATA_FROM_PACKET);
+        VLOG_INFO("+++++++pjq value of OFPACT_WRITE_METADATA_FROM_PACKET:%d", OFPACT_WRITE_METADATA_FROM_PACKET);
+        VLOG_INFO("+++++++pjq value of OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET:%d", OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET);
+        VLOG_INFO("+++++++pjq value of OFPACT_ADD_FIELD:%d", OFPACT_ADD_FIELD);
+        VLOG_INFO("+++++++pjq value of OFPACT_GOTO_TABLE:%d", OFPACT_GOTO_TABLE);
+        VLOG_INFO("+++++++pjq value of OVSINST_OFPIT11_GOTO_TABLE:%d", OVSINST_OFPIT11_GOTO_TABLE);
         VLOG_INFO("+++++++pjq ofp11_instruction->type: %d,  len:%d", inst->type, inst->len);
         //VLOG_INFO("+++++++pjq ofp11_instruction insts[0]->type: %d,  len:%d", insts[0].type, insts[0].len);
         error = decode_openflow11_instruction(inst, &type);
@@ -7627,11 +7671,23 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
 {
     const struct ofp11_instruction *instructions;
     const struct ofp11_instruction *insts[N_OVS_INSTRUCTIONS];
+    VLOG_INFO("+++++pjq the value of some constant ");
+    VLOG_INFO("+++++pjq OFPIT11_WRITE_METADATA:%d", OFPIT11_WRITE_METADATA);
+    VLOG_INFO("+++++pjq OFPACT_WRITE_METADATA:%d", OFPACT_WRITE_METADATA);
+    VLOG_INFO("+++++pjq OVSINST_OFPIT11_WRITE_METADATA:%d", OVSINST_OFPIT11_WRITE_METADATA);
+
+    VLOG_INFO("+++++pjq OFPIT11_APPLY_ACTIONS:%d", OFPIT11_APPLY_ACTIONS);
+    VLOG_INFO("+++++pjq OFPACT_OUTPUT:%d", OFPACT_OUTPUT);
+    VLOG_INFO("+++++pjq OVSINST_OFPIT11_APPLY_ACTIONS:%d", OVSINST_OFPIT11_APPLY_ACTIONS);
+
+    VLOG_INFO("+++++pjq OFPACT_GOTO_TABLE:%d", OFPACT_GOTO_TABLE);
+    VLOG_INFO("+++++pjq OVSINST_OFPIT11_GOTO_TABLE:%d", OVSINST_OFPIT11_GOTO_TABLE);
     enum ofperr error;
 
     ofpbuf_clear(ofpacts);
     if (version == OFP10_VERSION) {
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore ofpacts_pull_openflow_actions__  10");
+        VLOG_INFO("++++++++++++++pjq  wo jin lai le");
         return ofpacts_pull_openflow_actions__(openflow, instructions_len,
                                                version,
                                                (1u << N_OVS_INSTRUCTIONS) - 1,
@@ -7677,6 +7733,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         om->meter_id = ntohl(oim->meter_id);
     }
     if (insts[OVSINST_OFPIT11_APPLY_ACTIONS]) {
+        VLOG_INFO("++++++++pjq value of OVSINST_OFPIT11_APPLY_ACTIONS:%d", OVSINST_OFPIT11_APPLY_ACTIONS);
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_APPLY_ACTIONS");
         const struct pof_instruction_apply_actions *piaa;
         uint8_t action_num;
@@ -7737,17 +7794,34 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         om->mask = oiwm->metadata_mask;
     }
     if (insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]) {     /* pjq */
-        VLOG_INFO("+++++++++++pjq ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET");
+        VLOG_INFO("+++++++++++pjq ofpacts_pull_openflow_instructions: before OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET");
         const struct ofp11_instruction_write_metadata_from_packet *oiwmfp;
         struct ofpact_write_metadata_from_packet *owm;
 
         oiwmfp = ALIGNED_CAST(const struct ofp11_instruction_write_metadata_from_packet *,
                               insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]);
 
+        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",oiwmfp->metadata_offset,
+                                 oiwmfp->packet_offset, oiwmfp->field_len);
+        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",ntohs(oiwmfp->metadata_offset),
+                  ntohs(oiwmfp->packet_offset), ntohs(oiwmfp->field_len));
+        VLOG_INFO("++++++ OFPACT_WRITE_METADATA_FROM_PACKET_SIZE:%d", OFPACT_WRITE_METADATA_FROM_PACKET_SIZE);
+        //ofpacts->header = ofpbuf_put_uninit(ofpacts, 16);
+        //owm = ofpacts->header;
+        //ofpact_init(&owm->ofpact, OFPACT_WRITE_METADATA_FROM_PACKET, sizeof owm);
+
         owm = ofpact_put_WRITE_METADATA_FROM_PACKET(ofpacts);
-        owm->metadata_offset = oiwmfp->metadata_offset;
-        owm->packet_offset = oiwmfp->packet_offset;
-        owm->field_len = owm->field_len;
+        owm->metadata_offset = ntohs(oiwmfp->metadata_offset);
+        owm->packet_offset = ntohs(oiwmfp->packet_offset);
+        owm->field_len = ntohs(oiwmfp->field_len);
+        //owm->ofpact.raw = 42;
+
+
+        struct ds s;
+        ds_init(&s);
+        ds_put_hex_dump(&s, ofpacts->header, sizeof owm, 0, false);
+        VLOG_INFO("+++++ pjq ofpact:\n%s", ds_cstr(&s));
+        ds_destroy(&s);
     }
     if (insts[OVSINST_OFPIT11_GOTO_TABLE]) {
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_GOTO_TABLE");
@@ -7769,6 +7843,9 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         VLOG_INFO("gototable ogt:table_id=%d,type=%d,len=%d",ogt->table_id,ogt->ofpact.type,ogt->ofpact.len);
     }
 
+
+
+    VLOG_INFO("+++++++++++pjq ofpacts->size:%d, N_OVS_INSTRUCIONS:%d", ofpacts->size, N_OVS_INSTRUCTIONS);
     error = ofpacts_verify(ofpacts->data, ofpacts->size,
                            (1u << N_OVS_INSTRUCTIONS) - 1, 0);
     VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after ofpacts_verify");
@@ -8439,7 +8516,8 @@ get_ofpact_map(enum ofp_version version)
         {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_ADD_FIELD, 4}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_DELETE_FIELD, 5}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
-        { OFPACT_GROUP, 7 },  /* tsf: add in OF1.0, to support dump-flows. */
+        { OFPACT_GROUP, 70 },  /* tsf: add in OF1.0, to support dump-flows. */
+        {OFPACT_WRITE_METADATA_FROM_PACKET, 7},       /* pjq */
         { 0, -1 },
     };
 
@@ -8467,7 +8545,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_PUSH_MPLS, 19 },
         { OFPACT_POP_MPLS, 20 },
         { OFPACT_SET_QUEUE, 21 },
-        { OFPACT_GROUP, 7 },  /* tsf: change 22 to 7, to support pof. */
+        { OFPACT_GROUP, 70 },  /* tsf: change 22 to 7, to support pof. */
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         {OFPACT_DROP, 8},  /* tsf: according to enum ofp_raw_action_type (of1.1+) */
@@ -8475,6 +8553,7 @@ get_ofpact_map(enum ofp_version version)
         {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_ADD_FIELD, 4}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_DELETE_FIELD, 5}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
+        {OFPACT_WRITE_METADATA_FROM_PACKET, 7},       /* pjq */
         { 0, -1 },
     };
 
@@ -8491,7 +8570,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_PUSH_MPLS, 19 },
         { OFPACT_POP_MPLS, 20 },
         { OFPACT_SET_QUEUE, 21 },
-        { OFPACT_GROUP, 7 }, /* tsf: change 22 to 7, to support pof. */
+        { OFPACT_GROUP, 70 }, /* tsf: change 22 to 7, to support pof. */
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         { OFPACT_SET_FIELD, 1 },  /* tsf: change 25 to 1*/
@@ -8500,6 +8579,7 @@ get_ofpact_map(enum ofp_version version)
         {OFPACT_DELETE_FIELD, 5}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         /* OF1.3+ OFPAT_PUSH_PBB (26) not supported. */
         /* OF1.3+ OFPAT_POP_PBB (27) not supported. */
+        {OFPACT_WRITE_METADATA_FROM_PACKET, 7},       /* pjq */
         { 0, -1 },
     };
 
@@ -8850,8 +8930,10 @@ ofpacts_parse__(char *str, struct ofpbuf *ofpacts,
         ofp_port_t port;
 
         if (ofpact_type_from_name(key, &type)) {
+            VLOG_INFO("+++++++key:%s, type:%d, value:%s",key, type, value);
             error = ofpact_parse(type, value, ofpacts, usable_protocols);
             inst = ovs_instruction_type_from_ofpact_type(type);
+            VLOG_INFO("++++++pjq inst:%d",inst);
         } else if (!strcasecmp(key, "mod_vlan_vid")) {
             error = parse_set_vlan_vid(value, ofpacts, true);
         } else if (!strcasecmp(key, "mod_vlan_pcp")) {
@@ -9150,6 +9232,7 @@ ofpact_decode_raw(enum ofp_version ofp_version,
                 return OFPERR_OFPBAC_BAD_LEN;
             }
             hdrs.type = ntohs(nah->subtype);
+           // hdrs.type = 42;
         } else {
             VLOG_WARN_RL(&rl, "OpenFlow action has unknown vendor %#"PRIx32,
                          hdrs.vendor);
@@ -9161,6 +9244,7 @@ ofpact_decode_raw(enum ofp_version ofp_version,
     }
 
     hdrs.ofp_version = ofp_version;
+   // hdrs.type = 42;
     VLOG_INFO("++++++tsf ofpact_decode_raw: hdrs.vendor: %d, hdrs.type: %d, hdrs.ofp_version: %d.",
         		hdrs.vendor, hdrs.type, hdrs.ofp_version);  /* tsf: dump-flows's version is OF1.0 by default. */
     HMAP_FOR_EACH_WITH_HASH (inst, decode_node, ofpact_hdrs_hash(&hdrs),
@@ -9248,6 +9332,8 @@ ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
     VLOG_INFO("++++++tsf ofpact_pull_raw: before ofpact_decode_raw");
     error = ofpact_decode_raw(ofp_version, oah, buf->size, &action);
     VLOG_INFO("++++++tsf ofpact_pull_raw: after ofpact_decode_raw");
+
+
     if (error) {
         return error;
     }
@@ -9259,6 +9345,7 @@ ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
     }*/
 
     length = ntohs(oah->len);
+    VLOG_INFO("++++++++pjq OpenFlow action %s   length: %u",action->name, length);
     if (length > buf->size) {
         VLOG_WARN_RL(&rl, "OpenFlow action %s length %u exceeds action buffer "
                      "length %"PRIu32, action->name, length, buf->size);
@@ -9276,6 +9363,8 @@ ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         return OFPERR_OFPBAC_BAD_LEN;
     }
 
+    VLOG_INFO("++++++ pjq i'm here 1");
+
     *raw = action->raw;
     *arg = 0;
     if (action->arg_len) {
@@ -9288,8 +9377,13 @@ ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         }
     }
 
+    VLOG_INFO("++++++ pjq i'm here 2");
+
     /*ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH);*/
     ofpbuf_pull(buf, length);
+
+
+    VLOG_INFO("++++++ pjq i'm here 3");
 
     return 0;
 }

@@ -726,12 +726,42 @@ odp_execute_masked_set_action(struct dp_packet *packet,
     	break;
 
    	case OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET:            /* pjq */
-         /*VLOG_INFO("+++++++++++pjq odp_execute_masked_set_action: before OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET");*/
+         VLOG_INFO("+++++++++++pjq odp_execute_masked_set_action: before OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET");
+
+
+         VLOG_INFO("++++++ pjq the addr of pof_md:%p", pof_md);
+         VLOG_INFO("++++++ pjq the addr of packet:%p", packet);
+
         okwmfp = get_mask(a, struct ovs_key_write_metadata_from_packet);
+        VLOG_INFO("+++++ pjq metadata_offset:%d, packet_offset:%d, filed_len:%d",
+                    okwmfp->metadata_offset, okwmfp->packet_offset, okwmfp->field_len);
         uint8_t  value[POFDP_METADATA_MAX_LEN];
         memset(value, 0, sizeof(value));
-        pofbf_copy_bit(packet, value, okwmfp->packet_offset, okwmfp->field_len);
-        pofbf_cover_bit(pof_md, value, okwmfp->metadata_offset, okwmfp->field_len);
+
+        struct ds s;
+        ds_init(&s);
+        ds_put_hex_dump(&s, packet->mbuf.data_off + packet->mbuf.buf_addr, 64, 0, false);
+        VLOG_INFO("+++++ pjq packet->data:\n%s", ds_cstr(&s));
+        ds_destroy(&s);
+
+        pofbf_copy_bit((uint8_t *)(packet->mbuf.data_off + packet->mbuf.buf_addr),
+                        value, okwmfp->packet_offset, okwmfp->field_len);
+        ds_init(&s);
+        ds_put_hex_dump(&s, value, okwmfp->field_len / 8, 0, false);
+        VLOG_INFO("+++++ pjq value:\n%s", ds_cstr(&s));
+        ds_destroy(&s);
+
+
+
+        VLOG_INFO("+++++++ pjq sizeof(pof_md):%d", sizeof(pof_md));
+        pofbf_cover_bit((uint8_t *)pof_md, value, okwmfp->metadata_offset, okwmfp->field_len);
+        VLOG_INFO("+++++++ pjq metadata_offset:%d, packet_offset:%d, filed_len:%d",
+                    okwmfp->metadata_offset, okwmfp->packet_offset, okwmfp->field_len);
+
+        ds_init(&s);
+        ds_put_hex_dump(&s, pof_md->data, okwmfp->field_len / 8, 0, false);
+        VLOG_INFO("+++++ pjq pof_md->data:\n%s", ds_cstr(&s));
+        ds_destroy(&s);
         break;
 
     case OVS_KEY_ATTR_PRIORITY:
@@ -942,6 +972,9 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
             continue;
         }
 
+
+        VLOG_INFO("+++++++ pjq befoer switch ovs_action_attr");
+
         switch ((enum ovs_action_attr) type) {
         case OVS_ACTION_ATTR_HASH: {
             const struct ovs_action_hash *hash_act = nl_attr_get(a);
@@ -1005,8 +1038,11 @@ odp_execute_actions(void *dp, struct dp_packet_batch *batch, bool steal,
             break;
 
         case OVS_ACTION_ATTR_SET_MASKED:
-            /*VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");*/
+            VLOG_INFO("+++++++++++sqy odp_execute_actions: before odp_execute_masked_set_action");
             for (i = 0; i < cnt; i++) {
+                VLOG_INFO("++++++ pjq the addr of pof_mds[i]:%p", pof_mds[i]);
+                VLOG_INFO("++++++ pjq the addr of packets[i]:%p", packets[i]);
+                pof_mds[i] = (struct pofdp_metadata *)malloc(sizeof(struct pofdp_metadata));
                 odp_execute_masked_set_action(packets[i], nl_attr_get(a), ingress_time, pof_mds[i], bd_info);
             }
             break;
