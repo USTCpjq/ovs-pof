@@ -122,7 +122,7 @@ enum ofp_raw_action_type {
     /* OF1.0+(5): struct ofp10_action_delete_field. */
     OFPAT_RAW10_DELETE_FIELD,
 
-    /* OF1.0+(7): struct ofp11_instruction_write_metadata_from_packet. */
+    /* OF1.0+(42): struct ofp11_action_write_metadata_from_packet. */
     OFPAT_RAW10_WRITE_METADATA_FROM_PACKET,
 
 
@@ -217,7 +217,7 @@ enum ofp_raw_action_type {
     /* NX1.0(4), OF1.1+(21): uint32_t. */
     OFPAT_RAW_SET_QUEUE,
 
-    /* NX1.0(40), OF1.0+(70): uint32_t. */
+    /* NX1.0(40), OF1.0+(7): uint32_t. */
     OFPAT_RAW_GROUP,
 
     /* OF1.1+(23): uint8_t. */
@@ -6688,8 +6688,23 @@ format_WRITE_METADATA(const struct ofpact_metadata *a, struct ds *s)
 /* pjq
  *
  *  */
+
+
+/* pjq: Instruction structure for OFPIT_WRITE_METADATA_FROM_PACKET */
+struct ofp11_action_write_metadata_from_packet {
+    ovs_be16 type;              /* OFPIT_WRITE_METADATA_FROM_PACKET */
+    ovs_be16 len;               /* Length of this struct in bytes. */
+    uint8_t pad4[4];
+    ovs_be16  metadata_offset;  /* start location of metadata to store packet_field*/
+    ovs_be16  packet_offset;   /* start location from packet to read packet_field */
+    ovs_be16  field_len;       /* lenth to write to metadata. */
+    uint8_t pad2[2];            /* Align to 64-bits */
+
+};
+OFP_ASSERT(sizeof(struct ofp11_action_write_metadata_from_packet) == 16);
+
 static enum ofperr
-decode_OFPAT_RAW10_WRITE_METADATA_FROM_PACKET(const struct ofp11_instruction_write_metadata_from_packet *oiwmfp,
+decode_OFPAT_RAW10_WRITE_METADATA_FROM_PACKET(const struct ofp11_action_write_metadata_from_packet *oiwmfp,
                                   enum ofp_version ofp_version OVS_UNUSED,
                                   struct ofpbuf *out)
 {
@@ -6714,9 +6729,9 @@ static void
 encode_WRITE_METADATA_FROM_PACKET(const struct ofpact_write_metadata_from_packet *owmfp,
                                   enum ofp_version ofp_version, struct ofpbuf *out)
 {
-    struct ofp11_instruction_write_metadata_from_packet *oiwmfp;
+    struct ofp11_action_write_metadata_from_packet *oiwmfp;
 
-    oiwmfp = instruction_put_OFPIT11_WRITE_METADATA_FROM_PACKET(out);
+    oiwmfp = put_OFPAT10_WRITE_METADATA_FROM_PACKET(out);
     oiwmfp->metadata_offset = htons(owmfp->metadata_offset);
     oiwmfp->packet_offset = htons(owmfp->packet_offset);
     oiwmfp->field_len = htons(owmfp->field_len);
@@ -7499,6 +7514,17 @@ instruction_next(const struct ofp11_instruction *inst)
             ((uint8_t *) inst + ntohs(inst->len)));
 }
 
+static inline struct ofp11_instruction *
+instruction_next_pof(const struct ofp11_instruction *inst)
+{
+    VLOG_INFO("+++++ pjq the addr of inst:%p", inst);
+    VLOG_INFO("+++++ pjq the addr of inst:%p", (uint8_t *) inst +  OFP11_INSTRUCTION_ALIGN  );
+    VLOG_INFO("++++++ pjq v1:%d, v2:%d", OFP11_INSTRUCTION_ALIGN/8, ntohs(OFP11_INSTRUCTION_ALIGN));
+    return ((struct ofp11_instruction *) (void *)
+            ((uint8_t *) inst +  OFP11_INSTRUCTION_ALIGN ));
+}
+
+
 static inline bool
 pof_instruction_is_valid(const struct ofp11_instruction *inst,
                      size_t n_instructions)
@@ -7518,6 +7544,14 @@ instruction_is_valid(const struct ofp11_instruction *inst,
             && len >= sizeof *inst
             && len / sizeof *inst <= n_instructions);
 }
+
+
+/* This macro is careful to check for instructions with bad lengths. */
+#define INSTRUCTION_FOR_EACH_POF(ITER, LEFT, INSTRUCTIONS, N_INSTRUCTIONS)  \
+    for ((ITER) = (INSTRUCTIONS), (LEFT) = (N_INSTRUCTIONS);            \
+         (LEFT) > 0 && pof_instruction_is_valid(ITER, LEFT);                \
+         ((LEFT) --,               \
+          (ITER) = instruction_next_pof(ITER)))
 
 /* This macro is careful to check for instructions with bad lengths. */
 #define INSTRUCTION_FOR_EACH(ITER, LEFT, INSTRUCTIONS, N_INSTRUCTIONS)  \
@@ -7598,7 +7632,16 @@ decode_openflow11_instructions(const struct ofp11_instruction insts[],
     size_t left;
     VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: before decode_openflow11_instruction, n_insts: %d", n_insts);
     memset(out, 0, N_OVS_INSTRUCTIONS * sizeof *out);
-    INSTRUCTION_FOR_EACH (inst, left, insts, n_insts) {
+    INSTRUCTION_FOR_EACH_POF (inst, left, insts, n_insts) {
+
+
+        struct ds s;
+        ds_init(&s);
+        ds_put_hex_dump(&s, inst, 307, 0, false);
+        VLOG_INFO("+++++ pjq inst:\n%s", ds_cstr(&s));
+        ds_destroy(&s);
+
+        VLOG_INFO("+++++ pjq the addr of inst:%p", inst);
         enum ovs_instruction_type type;
         enum ofperr error;
 
@@ -7703,7 +7746,14 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     }
 
     instructions = ofpbuf_try_pull(openflow, instructions_len);
-    VLOG_INFO("++++++tsf ofpacts_pull_openflow_instructions: ofpbuf_try_pull: instruction_len: %d", instructions_len);
+
+    struct ds s;
+    ds_init(&s);
+    ds_put_hex_dump(&s, instructions, instructions_len, 0, false);
+    VLOG_INFO("+++++ pjq insructions:\n%s", ds_cstr(&s));
+    ds_destroy(&s);
+
+    VLOG_INFO("++++++pjq ofpacts_pull_openflow_instructions: ofpbuf_try_pull: instruction_len: %d", instructions->len);
     if (instructions == NULL) {
         VLOG_WARN_RL(&rl, "OpenFlow message instructions length %u exceeds "
                      "remaining message length (%"PRIu32")",
@@ -7732,6 +7782,39 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         om = ofpact_put_METER(ofpacts);
         om->meter_id = ntohl(oim->meter_id);
     }
+
+    if (insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]) {     /* pjq */
+        VLOG_INFO("+++++++++++pjq ofpacts_pull_openflow_instructions: before OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET");
+        const struct ofp11_instruction_write_metadata_from_packet *oiwmfp;
+        struct ofpact_write_metadata_from_packet *owm;
+
+        oiwmfp = ALIGNED_CAST(const struct ofp11_instruction_write_metadata_from_packet *,
+                              insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET] + 1);
+
+        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",oiwmfp->metadata_offset,
+                  oiwmfp->packet_offset, oiwmfp->field_len);
+        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",ntohs(oiwmfp->metadata_offset),
+                  ntohs(oiwmfp->packet_offset), ntohs(oiwmfp->field_len));
+        VLOG_INFO("++++++ OFPACT_WRITE_METADATA_FROM_PACKET_SIZE:%d", OFPACT_WRITE_METADATA_FROM_PACKET_SIZE);
+        //ofpacts->header = ofpbuf_put_uninit(ofpacts, 16);
+        //owm = ofpacts->header;
+        //ofpact_init(&owm->ofpact, OFPACT_WRITE_METADATA_FROM_PACKET, sizeof owm);
+
+        owm = ofpact_put_WRITE_METADATA_FROM_PACKET(ofpacts);
+        owm->metadata_offset = ntohs(oiwmfp->metadata_offset);
+        owm->packet_offset = ntohs(oiwmfp->packet_offset);
+        owm->field_len = ntohs(oiwmfp->field_len);
+        //owm->ofpact.raw = 42;
+
+
+        struct ds s;
+        ds_init(&s);
+        ds_put_hex_dump(&s, ofpacts->header, sizeof owm, 0, false);
+        VLOG_INFO("+++++ pjq ofpact:\n%s", ds_cstr(&s));
+        ds_destroy(&s);
+    }
+
+
     if (insts[OVSINST_OFPIT11_APPLY_ACTIONS]) {
         VLOG_INFO("++++++++pjq value of OVSINST_OFPIT11_APPLY_ACTIONS:%d", OVSINST_OFPIT11_APPLY_ACTIONS);
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_APPLY_ACTIONS");
@@ -7793,36 +7876,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         om->metadata = oiwm->metadata;
         om->mask = oiwm->metadata_mask;
     }
-    if (insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]) {     /* pjq */
-        VLOG_INFO("+++++++++++pjq ofpacts_pull_openflow_instructions: before OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET");
-        const struct ofp11_instruction_write_metadata_from_packet *oiwmfp;
-        struct ofpact_write_metadata_from_packet *owm;
 
-        oiwmfp = ALIGNED_CAST(const struct ofp11_instruction_write_metadata_from_packet *,
-                              insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]);
-
-        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",oiwmfp->metadata_offset,
-                                 oiwmfp->packet_offset, oiwmfp->field_len);
-        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",ntohs(oiwmfp->metadata_offset),
-                  ntohs(oiwmfp->packet_offset), ntohs(oiwmfp->field_len));
-        VLOG_INFO("++++++ OFPACT_WRITE_METADATA_FROM_PACKET_SIZE:%d", OFPACT_WRITE_METADATA_FROM_PACKET_SIZE);
-        //ofpacts->header = ofpbuf_put_uninit(ofpacts, 16);
-        //owm = ofpacts->header;
-        //ofpact_init(&owm->ofpact, OFPACT_WRITE_METADATA_FROM_PACKET, sizeof owm);
-
-        owm = ofpact_put_WRITE_METADATA_FROM_PACKET(ofpacts);
-        owm->metadata_offset = ntohs(oiwmfp->metadata_offset);
-        owm->packet_offset = ntohs(oiwmfp->packet_offset);
-        owm->field_len = ntohs(oiwmfp->field_len);
-        //owm->ofpact.raw = 42;
-
-
-        struct ds s;
-        ds_init(&s);
-        ds_put_hex_dump(&s, ofpacts->header, sizeof owm, 0, false);
-        VLOG_INFO("+++++ pjq ofpact:\n%s", ds_cstr(&s));
-        ds_destroy(&s);
-    }
     if (insts[OVSINST_OFPIT11_GOTO_TABLE]) {
         VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_GOTO_TABLE");
         const struct ofp11_instruction_goto_table *oigt;
@@ -8516,8 +8570,8 @@ get_ofpact_map(enum ofp_version version)
         {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_ADD_FIELD, 4}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_DELETE_FIELD, 5}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
-        { OFPACT_GROUP, 70 },  /* tsf: add in OF1.0, to support dump-flows. */
-        {OFPACT_WRITE_METADATA_FROM_PACKET, 7},       /* pjq */
+        { OFPACT_GROUP, 7 },  /* tsf: add in OF1.0, to support dump-flows. */
+        {OFPACT_WRITE_METADATA_FROM_PACKET, 42},       /* pjq */
         { 0, -1 },
     };
 
@@ -8545,7 +8599,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_PUSH_MPLS, 19 },
         { OFPACT_POP_MPLS, 20 },
         { OFPACT_SET_QUEUE, 21 },
-        { OFPACT_GROUP, 70 },  /* tsf: change 22 to 7, to support pof. */
+        { OFPACT_GROUP, 7 },  /* tsf: change 22 to 7, to support pof. */
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         {OFPACT_DROP, 8},  /* tsf: according to enum ofp_raw_action_type (of1.1+) */
@@ -8553,7 +8607,7 @@ get_ofpact_map(enum ofp_version version)
         {OFPACT_MODIFY_FIELD, 3}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_ADD_FIELD, 4}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         {OFPACT_DELETE_FIELD, 5}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
-        {OFPACT_WRITE_METADATA_FROM_PACKET, 7},       /* pjq */
+        {OFPACT_WRITE_METADATA_FROM_PACKET, 42},       /* pjq */
         { 0, -1 },
     };
 
@@ -8570,7 +8624,7 @@ get_ofpact_map(enum ofp_version version)
         { OFPACT_PUSH_MPLS, 19 },
         { OFPACT_POP_MPLS, 20 },
         { OFPACT_SET_QUEUE, 21 },
-        { OFPACT_GROUP, 70 }, /* tsf: change 22 to 7, to support pof. */
+        { OFPACT_GROUP, 7 }, /* tsf: change 22 to 7, to support pof. */
         { OFPACT_SET_IP_TTL, 23 },
         { OFPACT_DEC_TTL, 24 },
         { OFPACT_SET_FIELD, 1 },  /* tsf: change 25 to 1*/
@@ -8579,7 +8633,7 @@ get_ofpact_map(enum ofp_version version)
         {OFPACT_DELETE_FIELD, 5}, /* tsf: according to enum ofp_raw_action_type (of1.0+)  */
         /* OF1.3+ OFPAT_PUSH_PBB (26) not supported. */
         /* OF1.3+ OFPAT_POP_PBB (27) not supported. */
-        {OFPACT_WRITE_METADATA_FROM_PACKET, 7},       /* pjq */
+        {OFPACT_WRITE_METADATA_FROM_PACKET, 42},       /* pjq */
         { 0, -1 },
     };
 

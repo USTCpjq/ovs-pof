@@ -1702,7 +1702,7 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
         VLOG_INFO("++++++++pjq before ofpbuf_pull ofm->instruction_num:%d",ofm->instruction_num);
         ofm = ofpbuf_pull(&b, sizeof *ofm);
 
-        VLOG_INFO("++++++++pjq after ofpbuf_pull ofm->instruction_len:%d",ofm->instruction_num);
+        VLOG_INFO("++++++++pjq after ofpbuf_pull ofm->instruction_num:%d",ofm->instruction_num);
 
         /*error = ofputil_pull_pof_match_x(&b, &fm->match, NULL);*/
         memset(&fm->match.flow, 0, sizeof fm->match.flow);
@@ -3396,6 +3396,18 @@ ofputil_encode_pof_flow_stats_request(const struct ofputil_pof_flow_stats_reques
     case OFPUTIL_P_OF10_STD:
     case OFPUTIL_P_OF10_STD_TID: {
         VLOG_INFO("+++++++++++sqy ofputil_encode_pof_flow_stats_request : OFPUTIL_P_OF10_STD_TID");
+
+        struct ofp10_flow_stats_request *ofsr;
+
+        raw = (fsr->aggregate
+               ? OFPRAW_OFPST10_AGGREGATE_REQUEST
+               : OFPRAW_OFPST10_FLOW_REQUEST);
+        msg = ofpraw_alloc(raw, OFP10_VERSION, 0);
+        ofsr = ofpbuf_put_zeros(msg, sizeof *ofsr);
+        ofputil_match_to_ofp10_match(&fsr->match, &ofsr->match);
+        ofsr->table_id = fsr->table_id;
+        ofsr->out_port = ofputil_port_to_ofp11(fsr->out_port);
+        break;
     }
 
     case OFPUTIL_P_OF10_NXM:

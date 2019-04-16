@@ -4965,7 +4965,7 @@ static void
 pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
                  struct xlate_ctx *ctx)
 {
-    struct pof_fp_flow_wildcards *wc = ctx->wc;
+    struct pof_fp_flow_wildcards *wc = ctx->wc;d
     struct pof_flow *flow = &ctx->xin->flow;
     const struct ofpact *a;
 
@@ -4994,6 +4994,7 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
 
     /* tsf: used in OFPACT_FOR_EACH loop. */
     struct ofpact_controller *controller;
+    const struct ofpact_output *output;
     const struct ofpact_metadata *metadata;
     const struct ofpact_set_field *set_field;
     const struct ofpact_add_field *add_field;
@@ -5002,6 +5003,8 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
     const struct ofpact_delete_field *delete_field;
     const struct ofpact_write_metadata_from_packet *write_metadata_from_packet;  /* pjq */
     const struct mf_field *mf;
+
+    int bool_output = 0;
 
     OFPACT_FOR_EACH (a, ofpacts, ofpacts_len) {
         if (ctx->error) {//sqy notes: false
@@ -5018,10 +5021,21 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             break;
         }
 
+
+        struct ds s;
+        ds_init(&s);
+        ds_put_hex_dump(&s, a, a->len, 0, false);
+        VLOG_INFO("++++++ pjq a->len:%d", a->len);
+        VLOG_INFO("+++++ pjq a:\n%s", ds_cstr(&s));
+        ds_destroy(&s);
+
         switch (a->type) {
         case OFPACT_OUTPUT:
         	VLOG_INFO("+++++++tsf pof_do_xlate_actions OFPACT_OUTPUT->type:%d, len:%d", a->type, a->len);
-        	flow->telemetry.out_port = ofpact_get_OUTPUT(a)->port;
+        	output = ofpact_get_OUTPUT(a);
+        	flow->telemetry.out_port = output->port;
+        	VLOG_INFO("+++++++ pjq out_put:%d", flow->telemetry.out_port);
+        	bool_output =1;
             xlate_output_action(ctx, ofpact_get_OUTPUT(a)->port,
                                 ofpact_get_OUTPUT(a)->max_len, true);
             break;
@@ -5147,8 +5161,8 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             memcpy(flow->value[action_num], &write_metadata_from_packet->metadata_offset,
                    sizeof(write_metadata_from_packet->metadata_offset) );
             action_num++;
-            VLOG_INFO("++++++ pjq in pof_do_xlate_actions before xlate_commit_actions");
-            xlate_commit_actions(ctx);
+            //VLOG_INFO("++++++ pjq in pof_do_xlate_actions before xlate_commit_actions");
+            //xlate_commit_actions(ctx);
        	    }
        	    break;
 
@@ -5178,6 +5192,13 @@ pof_do_xlate_actions(const struct ofpact *ofpacts, size_t ofpacts_len,
             break;
         }
     }
+
+    //if(bool_output) {
+      //  VLOG_INFO("++++++ pjq bool_output is true");
+        //xlate_output_action(ctx, output->port,
+          //                  output->max_len, true);
+    //}
+
 }
 
 static void
@@ -6067,6 +6088,13 @@ xlate_actions(struct xlate_in *xin, struct xlate_out *xout)
             VLOG_INFO("++++++tsf xlate_actions ofpacts_len=%d, ofpacts->type:%d, ofpacts->raw:%d", ofpacts_len,
                        ofpacts->type, ofpacts->raw);
             mirror_ingress_packet(&ctx); //sqy notes: no mirror
+
+            struct ds s;
+            ds_init(&s);
+            ds_put_hex_dump(&s, ofpacts, ofpacts_len, 0, false);
+            VLOG_INFO("+++++ pjq ofpacts:\n%s", ds_cstr(&s));
+            ds_destroy(&s);
+
             pof_do_xlate_actions(ofpacts, ofpacts_len, &ctx);
             if (ctx.error) {
                 goto exit;

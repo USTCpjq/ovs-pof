@@ -599,6 +599,9 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
    // ((const struct ofp_header *)request->data)->type = ((const struct ofp_header *)request->data)->type - 1;
     VLOG_INFO("+++++++ pjq request->data->type:%d", oh->type);
     if (ofpmsg_is_stat_request(oh)) {
+
+        VLOG_INFO("+++++++ pjq request->data->type:%d", oh->type);
+
         ovs_be32 send_xid = oh->xid;
         enum ofpraw request_raw;
         enum ofpraw reply_raw;

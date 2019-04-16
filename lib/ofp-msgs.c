@@ -321,15 +321,21 @@ static bool
 ofp_is_stat_request(enum ofp_version version, uint8_t type)
 {
     switch (version) {
-    case OFP10_VERSION:
+    case OFP10_VERSION: {
+        VLOG_INFO("++++++ pjq type is OFPT10_STATS_REQUEST:%d", OFPT10_STATS_REQUEST);
         return type == OFPT10_STATS_REQUEST;
+    }
+
     case OFP11_VERSION:
     case OFP12_VERSION:
     case OFP13_VERSION:
     case OFP14_VERSION:
     case OFP15_VERSION:
-    case OFP16_VERSION:
+    case OFP16_VERSION: {
+        //VLOG_INFO("++++++ pjq type is OFPT11_STATS_REQUEST:%d", OFPT11_STATS_REQUEST);
         return type == OFPT11_STATS_REQUEST;
+    }
+
     }
 
     return false;
