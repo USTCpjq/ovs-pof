@@ -322,7 +322,7 @@ ofp_is_stat_request(enum ofp_version version, uint8_t type)
 {
     switch (version) {
     case OFP10_VERSION: {
-        VLOG_INFO("++++++ pjq type is OFPT10_STATS_REQUEST:%d", OFPT10_STATS_REQUEST);
+      //  VLOG_INFO("++++++ pjq type is OFPT10_STATS_REQUEST:%d", OFPT10_STATS_REQUEST);
         return type == OFPT10_STATS_REQUEST;
     }
 

@@ -1699,7 +1699,7 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
         VLOG_INFO("++++++++sqy sizeof *ofm: %d; b.size: %d"
                       " control message", sizeof *ofm, b.size);
 
-        VLOG_INFO("++++++++pjq before ofpbuf_pull ofm->instruction_num:%d",ofm->instruction_num);
+   //     VLOG_INFO("++++++++pjq before ofpbuf_pull ofm->instruction_num:%d",ofm->instruction_num);
         ofm = ofpbuf_pull(&b, sizeof *ofm);
 
         VLOG_INFO("++++++++pjq after ofpbuf_pull ofm->instruction_num:%d",ofm->instruction_num);
@@ -1787,14 +1787,14 @@ ofputil_decode_flow_mod_pof(struct ofputil_pof_flow_mod *fm,
     }
     fm->ofpacts = ofpacts->data;
     fm->ofpacts_len = ofpacts->size;
-    VLOG_INFO("+++++++++++pjq   ofputil_decode_flow_mod_pof:   after ofpacts_pull_openflow_instructions  fm->ofpacts_len:%d", fm->ofpacts_len);
+    //VLOG_INFO("+++++++++++pjq   ofputil_decode_flow_mod_pof:   after ofpacts_pull_openflow_instructions  fm->ofpacts_len:%d", fm->ofpacts_len);
 
 
-    struct ds s;
-    ds_init(&s);
-    ds_put_hex_dump(&s, ofpacts->data, ofpacts->size, 0, false);
-    VLOG_INFO("++++++ pjq the new action:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
+  //  struct ds s;
+   // ds_init(&s);
+   // ds_put_hex_dump(&s, ofpacts->data, ofpacts->size, 0, false);
+  //  VLOG_INFO("++++++ pjq the new action:\n%s", ds_cstr(&s));
+  //  ds_destroy(&s);
     }
     else if (raw == OFPRAW_NXT_FLOW_MOD){
         /* Nicira extended flow_mod. */
@@ -3420,9 +3420,9 @@ ofputil_encode_pof_flow_stats_request(const struct ofputil_pof_flow_stats_reques
                ? OFPRAW_NXST_AGGREGATE_REQUEST
                : OFPRAW_NXST_FLOW_REQUEST);
         if (raw == OFPRAW_NXST_FLOW_REQUEST) {
-            VLOG_INFO("+++++ pjq raw is OFPRAW_NXST_FLOW_REQUEST:%d", OFPRAW_NXST_FLOW_REQUEST);
+            //VLOG_INFO("+++++ pjq raw is OFPRAW_NXST_FLOW_REQUEST:%d", OFPRAW_NXST_FLOW_REQUEST);
         } else {
-            VLOG_INFO("+++++ pjq raw is OFPRAW_NXST_AGGREGATE_REQUEST:%d", OFPRAW_NXST_AGGREGATE_REQUEST);
+           // VLOG_INFO("+++++ pjq raw is OFPRAW_NXST_AGGREGATE_REQUEST:%d", OFPRAW_NXST_AGGREGATE_REQUEST);
         }
         msg = ofpraw_alloc(raw, OFP10_VERSION, NXM_TYPICAL_LEN);
         ofpbuf_put_zeros(msg, sizeof *nfsr);
@@ -3637,21 +3637,21 @@ ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *fs,
                                 struct ofpbuf *ofpacts)
 {
 
-    struct ds s;
-    ds_init(&s);
-    ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
-    VLOG_INFO("++++++ pjq msg->size:%d", msg->size);
-    VLOG_INFO("+++++ pjq msg->data:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
+    //struct ds s;
+    //ds_init(&s);
+   // ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
+   // VLOG_INFO("++++++ pjq msg->size:%d", msg->size);
+  //  VLOG_INFO("+++++ pjq msg->data:\n%s", ds_cstr(&s));
+   // ds_destroy(&s);
 
 
     const struct ofp_header *oh;
     size_t instructions_len;
     enum ofperr error;
     enum ofpraw raw;
-    if(msg->header == NULL) {
-        VLOG_INFO("++++++ pjq msg->header is NULL");
-    }
+  //  if(msg->header == NULL) {
+   //     VLOG_INFO("++++++ pjq msg->header is NULL");
+  //  }
 
     error = (msg->header ? ofpraw_decode(&raw, msg->header)
              : ofpraw_pull(&raw, msg));
@@ -3661,26 +3661,18 @@ ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *fs,
     }
 
 
-    ds_init(&s);
-    ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
-    VLOG_INFO("++++++ pjq msg->size:%d", msg->size);
-    VLOG_INFO("+++++ pjq msg:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
+   // ds_init(&s);
+   // ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
+  //  VLOG_INFO("++++++ pjq msg->size:%d", msg->size);
+  //  VLOG_INFO("+++++ pjq msg:\n%s", ds_cstr(&s));
+  //  ds_destroy(&s);
     oh = msg->header;
 
-    if (raw == OFPRAW_NXST_FLOW_REPLY) {
-        VLOG_INFO("++++++++ pjq raw: OFPRAW_NXST_FLOW_REPLY");
-        VLOG_INFO("++++++++ pjq the value of OFPRAW_NXST_FLOW_REPLY:%d", OFPRAW_NXST_FLOW_REPLY);
 
-        VLOG_INFO("+++++++  msg->header->type:%d", oh->type);
-        VLOG_INFO("++++++++ pjq the value of OFPTYPE_FLOW_STATS_REPLY:%d", OFPTYPE_FLOW_STATS_REPLY);
 
-    }
-
-    VLOG_INFO("++++++pjq msg->size:%d", msg->size);
 
     if (!msg->size) {
-        VLOG_INFO("+++++pjq return EOF");
+      //  VLOG_INFO("+++++pjq return EOF");
         return EOF;
     } else if (raw == OFPRAW_OFPST11_FLOW_REPLY){
        VLOG_INFO("+++++++++++sqy ofputil_decode_pof_flow_stats_reply: OFPRAW_OFPST11_FLOW_REPLY ");
@@ -3692,12 +3684,12 @@ ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *fs,
 
         nfs = ofpbuf_try_pull(msg, sizeof *nfs);
 
-        struct ds s;
-        ds_init(&s);
-        ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
-        VLOG_INFO("++++++ pjq msg->size:%d", msg->size);
-        VLOG_INFO("+++++ pjq msg:\n%s", ds_cstr(&s));
-        ds_destroy(&s);
+      //  struct ds s;
+      //  ds_init(&s);
+      //  ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
+      //  VLOG_INFO("++++++ pjq msg->size:%d", msg->size);
+      //  VLOG_INFO("+++++ pjq msg:\n%s", ds_cstr(&s));
+      //  ds_destroy(&s);
 
         if (!nfs) {
             VLOG_WARN_RL(&bad_ofmsg_rl, "NXST_FLOW reply has %"PRIu32" leftover "
@@ -3716,8 +3708,8 @@ ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *fs,
             return EINVAL;
         }
         instructions_len = length - sizeof *nfs - ROUND_UP(match_len, 8);
-        VLOG_INFO("++++++ pjq instructions_len:%d, length:%d, sizeof *nfs:%d, mathch_len:%d", instructions_len, sizeof *nfs,
-                    match_len);
+      //  VLOG_INFO("++++++ pjq instructions_len:%d, length:%d, sizeof *nfs:%d, mathch_len:%d", instructions_len, sizeof *nfs,
+        //            match_len);
 
         fs->cookie = nfs->cookie;
         fs->table_id = nfs->table_id;
@@ -3744,21 +3736,21 @@ ofputil_decode_pof_flow_stats_reply(struct ofputil_pof_flow_stats *fs,
     } else {
         OVS_NOT_REACHED();
     }
-    VLOG_INFO("+++++++++pjq before ofpacts_pull_openflow_instructions");
+    //VLOG_INFO("+++++++++pjq before ofpacts_pull_openflow_instructions");
 
 
 
-    ds_init(&s);
-    ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
-    VLOG_INFO("+++++ pjq msg:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
+   // ds_init(&s);
+   // ds_put_hex_dump(&s, msg->data, msg->size, 0, false);
+  //  VLOG_INFO("+++++ pjq msg:\n%s", ds_cstr(&s));
+   // ds_destroy(&s);
 
     if (ofpacts_pull_openflow_instructions(msg, instructions_len, oh->version,
                                            ofpacts)) {
         VLOG_WARN_RL(&bad_ofmsg_rl, "OFPST_FLOW reply bad instructions");
         return EINVAL;
     }
-    VLOG_INFO("+++++++++pjq after ofpacts_pull_openflow_instructions");
+   // VLOG_INFO("+++++++++pjq after ofpacts_pull_openflow_instructions");
     fs->ofpacts = ofpacts->data;
     fs->ofpacts_len = ofpacts->size;
 

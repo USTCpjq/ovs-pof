@@ -597,10 +597,10 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
 {
     const struct ofp_header *oh = request->data;
    // ((const struct ofp_header *)request->data)->type = ((const struct ofp_header *)request->data)->type - 1;
-    VLOG_INFO("+++++++ pjq request->data->type:%d", oh->type);
+   // VLOG_INFO("+++++++ pjq request->data->type:%d", oh->type);
     if (ofpmsg_is_stat_request(oh)) {
 
-        VLOG_INFO("+++++++ pjq request->data->type:%d", oh->type);
+       // VLOG_INFO("+++++++ pjq request->data->type:%d", oh->type);
 
         ovs_be32 send_xid = oh->xid;
         enum ofpraw request_raw;
@@ -624,23 +624,23 @@ dump_transaction(struct vconn *vconn, struct ofpbuf *request)
             ds_init(&s);
             ds_put_hex_dump(&s, reply->data, reply->size, 0, false);
 
-            VLOG_INFO("+++++ pjq reply->data:\n%s", ds_cstr(&s));
-            VLOG_INFO("++++++ pjq reply->size:%d", reply->size);
+         //   VLOG_INFO("+++++ pjq reply->data:\n%s", ds_cstr(&s));
+          //  VLOG_INFO("++++++ pjq reply->size:%d", reply->size);
             ds_destroy(&s);
 
             const struct ofp_header *oh_reply = reply->data;
 
-            VLOG_INFO("+++++++ pjq reply->data->type:%d", oh_reply->type);
-            VLOG_INFO("+++++++ pjq request_raw:%d, reply_raw:%d", request_raw, reply_raw);
-            VLOG_INFO("+++++++ pjq OFPRAW_NXST_FLOW_REQUEST:%d, OFPRAW_NXST_FLOW_REPLY:%d", OFPRAW_NXST_FLOW_REQUEST, OFPRAW_NXST_FLOW_REPLY);
-            VLOG_INFO("+++++++ pjq OFPRAW_OFPST11_FLOW_REQUEST:%d, OFPRAW_OFPST11_FLOW_REPLY:%d", OFPRAW_OFPST11_FLOW_REQUEST, OFPRAW_OFPST11_FLOW_REPLY);
-            VLOG_INFO("+++++++ pjq OFPTYPE_FLOW_STATS_REQUEST:%d, OFPTYPE_FLOW_STATS_REPLY:%d", OFPTYPE_FLOW_STATS_REQUEST, OFPTYPE_FLOW_STATS_REPLY);
+         //   VLOG_INFO("+++++++ pjq reply->data->type:%d", oh_reply->type);
+          //  VLOG_INFO("+++++++ pjq request_raw:%d, reply_raw:%d", request_raw, reply_raw);
+         //   VLOG_INFO("+++++++ pjq OFPRAW_NXST_FLOW_REQUEST:%d, OFPRAW_NXST_FLOW_REPLY:%d", OFPRAW_NXST_FLOW_REQUEST, OFPRAW_NXST_FLOW_REPLY);
+         //   VLOG_INFO("+++++++ pjq OFPRAW_OFPST11_FLOW_REQUEST:%d, OFPRAW_OFPST11_FLOW_REPLY:%d", OFPRAW_OFPST11_FLOW_REQUEST, OFPRAW_OFPST11_FLOW_REPLY);
+          //  VLOG_INFO("+++++++ pjq OFPTYPE_FLOW_STATS_REQUEST:%d, OFPTYPE_FLOW_STATS_REPLY:%d", OFPTYPE_FLOW_STATS_REQUEST, OFPTYPE_FLOW_STATS_REPLY);
             recv_xid = ((struct ofp_header *) reply->data)->xid;
             if (send_xid == recv_xid) {
                 enum ofpraw raw;
-                VLOG_INFO("++++++++ pjq before ofp_print");
+              //  VLOG_INFO("++++++++ pjq before ofp_print");
                 ofp_print(stdout, reply->data, reply->size, verbosity + 1);
-                VLOG_INFO("++++++++ pjq after ofp_print");
+              //  VLOG_INFO("++++++++ pjq after ofp_print");
                 ofpraw_decode(&raw, reply->data);
                 if (ofptype_from_ofpraw(raw) == OFPTYPE_ERROR) {
                     done = true;
@@ -1206,46 +1206,46 @@ prepare_dump_flows(int argc, char *argv[], bool aggregate,
     error = parse_pof_flow_stats_request_str(&fsr, aggregate,
                                              argc > 2 ? argv[2] : "",
                                              &usable_protocols);
-    VLOG_INFO("+++++ pjq usable_protocols:%d", usable_protocols);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: "
-              "after parse_pof_flow_stats_request_str error = %s", error);
+   // VLOG_INFO("+++++ pjq usable_protocols:%d", usable_protocols);
+    //VLOG_INFO("+++++++++++sqy prepare_dump_flows: "
+      //        "after parse_pof_flow_stats_request_str error = %s", error);
     if (error) {
         ovs_fatal(0, "%s", error);
     }
     protocol = open_vconn(argv[1], &vconn);
-    VLOG_INFO("+++++ pjq protocols:%d", protocol);
+   // VLOG_INFO("+++++ pjq protocols:%d", protocol);
     protocol = set_protocol_for_flow_dump(vconn, protocol, usable_protocols);
-    VLOG_INFO("+++++ pjq protocols:%d", protocol);
+   // VLOG_INFO("+++++ pjq protocols:%d", protocol);
     //protocol = 1;
-    VLOG_INFO("++++++ pjq before ofputil_encode_flow_stats_request");
+    //VLOG_INFO("++++++ pjq before ofputil_encode_flow_stats_request");
     *requestp = ofputil_encode_pof_flow_stats_request(&fsr, protocol);
-    VLOG_INFO("+++++++++++sqy prepare_dump_flows: after ofputil_encode_pof_flow_stats_request");
+   // VLOG_INFO("+++++++++++sqy prepare_dump_flows: after ofputil_encode_pof_flow_stats_request");
     return vconn;
 }
 
 static void
 ofctl_dump_flows__(int argc, char *argv[], bool aggregate)
 {
-    int i = argc;
-    VLOG_INFO("++++++ pjq argc:%d", argc);
-    while(i) {
-        i--;
-        VLOG_INFO("++++++ pjq argv[%d]:%s", i, argv[i]);
-    }
-    if(aggregate){
-        VLOG_INFO("++++++ pjq aggregate is true");
-    } else {
-        VLOG_INFO("++++++ pjq aggregate is false");
-    }
+ //   int i = argc;
+  //  VLOG_INFO("++++++ pjq argc:%d", argc);
+   // while(i) {
+    //    i--;
+    //    VLOG_INFO("++++++ pjq argv[%d]:%s", i, argv[i]);
+   // }
+   // if(aggregate){
+   //     VLOG_INFO("++++++ pjq aggregate is true");
+    //} else {
+   //     VLOG_INFO("++++++ pjq aggregate is false");
+   // }
     struct ofpbuf *request;
     struct vconn *vconn;
 
-    VLOG_INFO("+++++++pjq before prepare_dump_flows");
+    //VLOG_INFO("+++++++pjq before prepare_dump_flows");
     vconn = prepare_dump_flows(argc, argv, aggregate, &request);
-    VLOG_INFO("+++++++pjq after prepare_dump_flows");
-    VLOG_INFO("+++++++pjq before dump_transaction");
+   // VLOG_INFO("+++++++pjq after prepare_dump_flows");
+    //VLOG_INFO("+++++++pjq before dump_transaction");
     dump_transaction(vconn, request);
-    VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: after dump_transaction");
+   // VLOG_INFO("+++++++++++sqy ofctl_dump_flows__: after dump_transaction");
     vconn_close(vconn);
 }
 
@@ -1319,9 +1319,9 @@ static void
 ofctl_dump_flows(struct ovs_cmdl_context *ctx)
 {
     if (!n_criteria) {
-        VLOG_INFO("++++++++++++++pjq before ofctl_dump_flows__");
+      //  VLOG_INFO("++++++++++++++pjq before ofctl_dump_flows__");
         ofctl_dump_flows__(ctx->argc, ctx->argv, false);
-        VLOG_INFO("+++++++++++++pjq after ofctl_dump_flows__");
+       // VLOG_INFO("+++++++++++++pjq after ofctl_dump_flows__");
         return;
     } else {
         struct ofputil_flow_stats *fses;
@@ -1349,12 +1349,12 @@ ofctl_dump_flows(struct ovs_cmdl_context *ctx)
             }
 
             fs = &fses[n_fses];
-            VLOG_INFO("+++++++++pjq before recv_flow_stats_reply");
+         //   VLOG_INFO("+++++++++pjq before recv_flow_stats_reply");
             if (!recv_flow_stats_reply(vconn, send_xid, &reply, fs,
                                        &ofpacts)) {
                 break;
             }
-            VLOG_INFO("++++++++++++pjq after recv_flow_stats_reply");
+           // VLOG_INFO("++++++++++++pjq after recv_flow_stats_reply");
             fs->ofpacts = xmemdup(fs->ofpacts, fs->ofpacts_len);
             n_fses++;
         }
@@ -3512,9 +3512,9 @@ recv_flow_stats_reply(struct vconn *vconn, ovs_be32 send_xid,
         }
 
         /* Pull an individual flow stats reply out of the message. */
-        VLOG_INFO("++++++++++pjq before ofputil_decode_flow_stats_reply");
+      //  VLOG_INFO("++++++++++pjq before ofputil_decode_flow_stats_reply");
         retval = ofputil_decode_flow_stats_reply(fs, reply, false, ofpacts);
-        VLOG_INFO("++++++++++pjq after ofputil_decode_flow_stats_reply");
+       // VLOG_INFO("++++++++++pjq after ofputil_decode_flow_stats_reply");
         switch (retval) {
         case 0:
             *replyp = reply;

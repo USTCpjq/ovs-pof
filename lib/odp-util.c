@@ -5827,7 +5827,7 @@ commit_pof_write_metadata_from_packet_action(const struct flow *flow, struct flo
 
     get_pof_write_metadata_from_packet_mask(pflow, &mask, index);
 
-    VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: before pof_commit");
+   // VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: before pof_commit");
     if (pof_commit(OVS_KEY_ATTR_WRITE_METADATA_FROM_PACKET, use_masked,
                    &key, &base, &mask, sizeof key, odp_actions, pflow->flag)) {     //pjq notes: commit return false, no run
         VLOG_INFO("+++++++++++pjq commit_pof_write_metadata_from_packet_action: after pof_commit");
@@ -6417,7 +6417,7 @@ commit_odp_actions(const struct flow *flow, struct flow *base,
      *      there is no need to commit the original ovs actions. commit_set_priority_action may be
      *      useful, keep teporarily.
      * */
-    VLOG_INFO("+++++ pjq before commit_pof_action");
+   // VLOG_INFO("+++++ pjq before commit_pof_action");
     commit_pof_action(flow, base, odp_actions, wc, use_masked);
 
 //    commit_set_ether_addr_action(flow, base, odp_actions, wc, use_masked);

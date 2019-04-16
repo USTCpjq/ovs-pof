@@ -1127,7 +1127,7 @@ upcall_xlate(struct udpif *udpif, struct upcall *upcall,
 
     xlate_actions(&xin, &upcall->xout);
 
-    VLOG_INFO("++++++ pjq after xlate_actions");
+   // VLOG_INFO("++++++ pjq after xlate_actions");
 
     if (wc) {
         /* Convert the input port wildcard from OFP to ODP format. There's no

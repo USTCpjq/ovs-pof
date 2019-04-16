@@ -6889,7 +6889,7 @@ ofpacts_decode(const void *actions, size_t actions_len,
         VLOG_INFO("++++++tsf: ofpacts_decode: before ofpact_pull_raw, in openflow");
         error = ofpact_pof_pull_raw(&openflow, ofp_version, &raw, &arg);
 
-        VLOG_INFO("++++++ pjq raw:%d, OFPAT_RAW10_WRITE_METADATA_FROM_PACKET:%d", raw, OFPAT_RAW10_WRITE_METADATA_FROM_PACKET);
+       // VLOG_INFO("++++++ pjq raw:%d, OFPAT_RAW10_WRITE_METADATA_FROM_PACKET:%d", raw, OFPAT_RAW10_WRITE_METADATA_FROM_PACKET);
 
 
         if (!error) {
@@ -6925,12 +6925,12 @@ ofpacts_pull_openflow_actions__(struct ofpbuf *openflow,
         return OFPERR_OFPBRC_BAD_LEN;
     }
 
-    struct ds s;
-    ds_init(&s);
-    ds_put_hex_dump(&s, openflow->data, openflow->size, 0, false);
-    VLOG_INFO("++++++ pjq openflow->size:%d", openflow->size);
-    VLOG_INFO("+++++ pjq openflow:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
+   // struct ds s;
+ //   ds_init(&s);
+   // ds_put_hex_dump(&s, openflow->data, openflow->size, 0, false);
+  //  VLOG_INFO("++++++ pjq openflow->size:%d", openflow->size);
+   // VLOG_INFO("+++++ pjq openflow:\n%s", ds_cstr(&s));
+  //  ds_destroy(&s);
 
     actions = ofpbuf_try_pull(openflow, actions_len);
     if (actions == NULL) {
@@ -6940,18 +6940,6 @@ ofpacts_pull_openflow_actions__(struct ofpbuf *openflow,
         return OFPERR_OFPBRC_BAD_LEN;
     }
 
-
-    ds_init(&s);
-    ds_put_hex_dump(&s, openflow->data, openflow->size, 0, false);
-    VLOG_INFO("++++++ pjq openflow->size:%d", openflow->size);
-    VLOG_INFO("+++++ pjq openflow:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
-
-
-    ds_init(&s);
-    ds_put_hex_dump(&s, actions, actions_len, 0, false);
-    VLOG_INFO("+++++ pjq actions:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
 
     VLOG_INFO("++++++tsf ofpacts_pull_openflow_actions__, before ofpacts_decode in OF1.0");
     error = ofpacts_decode(actions, actions_len, version, ofpacts);
@@ -7517,9 +7505,9 @@ instruction_next(const struct ofp11_instruction *inst)
 static inline struct ofp11_instruction *
 instruction_next_pof(const struct ofp11_instruction *inst)
 {
-    VLOG_INFO("+++++ pjq the addr of inst:%p", inst);
-    VLOG_INFO("+++++ pjq the addr of inst:%p", (uint8_t *) inst +  OFP11_INSTRUCTION_ALIGN  );
-    VLOG_INFO("++++++ pjq v1:%d, v2:%d", OFP11_INSTRUCTION_ALIGN/8, ntohs(OFP11_INSTRUCTION_ALIGN));
+   // VLOG_INFO("+++++ pjq the addr of inst:%p", inst);
+   // VLOG_INFO("+++++ pjq the addr of inst:%p", (uint8_t *) inst +  OFP11_INSTRUCTION_ALIGN  );
+   // VLOG_INFO("++++++ pjq v1:%d, v2:%d", OFP11_INSTRUCTION_ALIGN/8, ntohs(OFP11_INSTRUCTION_ALIGN));
     return ((struct ofp11_instruction *) (void *)
             ((uint8_t *) inst +  OFP11_INSTRUCTION_ALIGN ));
 }
@@ -7576,7 +7564,6 @@ VLOG_INFO("+++++++++++sqy decode_openflow11_instruction:start  ovs_instrucion_ty
                 ? len >= sizeof(struct STRUCT)          \
                 : len == sizeof(struct STRUCT)) {       \
                 *type = OVSINST_##ENUM;                 \
-                VLOG_INFO("++++++pjq EXTENSIBLE:%d    len:%d     sizeof(struct STRUCT):%d, CONSTANT_HTONS(ENUM):%d", EXTENSIBLE, len, sizeof(struct STRUCT), CONSTANT_HTONS(ENUM)); \
                 return 0;                               \
             } else {                                    \
                 return OFPERR_OFPBIC_BAD_LEN;           \
@@ -7589,6 +7576,7 @@ OVS_INSTRUCTIONS
         return OFPERR_OFPBIC_UNKNOWN_INST;
     }
 }
+
 
 static enum ofperr
 decode_pof_instructions(const struct ofp11_instruction insts[],
@@ -7635,23 +7623,16 @@ decode_openflow11_instructions(const struct ofp11_instruction insts[],
     INSTRUCTION_FOR_EACH_POF (inst, left, insts, n_insts) {
 
 
-        struct ds s;
-        ds_init(&s);
-        ds_put_hex_dump(&s, inst, 307, 0, false);
-        VLOG_INFO("+++++ pjq inst:\n%s", ds_cstr(&s));
-        ds_destroy(&s);
+      //  struct ds s;
+     //   ds_init(&s);
+      //  ds_put_hex_dump(&s, inst, 307, 0, false);
+     //   VLOG_INFO("+++++ pjq inst:\n%s", ds_cstr(&s));
+     //   ds_destroy(&s);
 
-        VLOG_INFO("+++++ pjq the addr of inst:%p", inst);
+     //   VLOG_INFO("+++++ pjq the addr of inst:%p", inst);
         enum ovs_instruction_type type;
         enum ofperr error;
 
-        VLOG_INFO("+++++++pjq value of OFPACT_WRITE_METADATA_FROM_PACKET:%d", OFPACT_WRITE_METADATA_FROM_PACKET);
-        VLOG_INFO("+++++++pjq value of OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET:%d", OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET);
-        VLOG_INFO("+++++++pjq value of OFPACT_ADD_FIELD:%d", OFPACT_ADD_FIELD);
-        VLOG_INFO("+++++++pjq value of OFPACT_GOTO_TABLE:%d", OFPACT_GOTO_TABLE);
-        VLOG_INFO("+++++++pjq value of OVSINST_OFPIT11_GOTO_TABLE:%d", OVSINST_OFPIT11_GOTO_TABLE);
-        VLOG_INFO("+++++++pjq ofp11_instruction->type: %d,  len:%d", inst->type, inst->len);
-        //VLOG_INFO("+++++++pjq ofp11_instruction insts[0]->type: %d,  len:%d", insts[0].type, insts[0].len);
         error = decode_openflow11_instruction(inst, &type);
         VLOG_INFO("+++++++++++sqy decode_openflow11_instructions: after decode_openflow11_instruction  type :%d", type);
         if (error) {
@@ -7714,23 +7695,12 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
 {
     const struct ofp11_instruction *instructions;
     const struct ofp11_instruction *insts[N_OVS_INSTRUCTIONS];
-    VLOG_INFO("+++++pjq the value of some constant ");
-    VLOG_INFO("+++++pjq OFPIT11_WRITE_METADATA:%d", OFPIT11_WRITE_METADATA);
-    VLOG_INFO("+++++pjq OFPACT_WRITE_METADATA:%d", OFPACT_WRITE_METADATA);
-    VLOG_INFO("+++++pjq OVSINST_OFPIT11_WRITE_METADATA:%d", OVSINST_OFPIT11_WRITE_METADATA);
-
-    VLOG_INFO("+++++pjq OFPIT11_APPLY_ACTIONS:%d", OFPIT11_APPLY_ACTIONS);
-    VLOG_INFO("+++++pjq OFPACT_OUTPUT:%d", OFPACT_OUTPUT);
-    VLOG_INFO("+++++pjq OVSINST_OFPIT11_APPLY_ACTIONS:%d", OVSINST_OFPIT11_APPLY_ACTIONS);
-
-    VLOG_INFO("+++++pjq OFPACT_GOTO_TABLE:%d", OFPACT_GOTO_TABLE);
-    VLOG_INFO("+++++pjq OVSINST_OFPIT11_GOTO_TABLE:%d", OVSINST_OFPIT11_GOTO_TABLE);
     enum ofperr error;
 
     ofpbuf_clear(ofpacts);
     if (version == OFP10_VERSION) {
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore ofpacts_pull_openflow_actions__  10");
-        VLOG_INFO("++++++++++++++pjq  wo jin lai le");
+       // VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore ofpacts_pull_openflow_actions__  10");
+      //  VLOG_INFO("++++++++++++++pjq  wo jin lai le");
         return ofpacts_pull_openflow_actions__(openflow, instructions_len,
                                                version,
                                                (1u << N_OVS_INSTRUCTIONS) - 1,
@@ -7747,13 +7717,13 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
 
     instructions = ofpbuf_try_pull(openflow, instructions_len);
 
-    struct ds s;
-    ds_init(&s);
-    ds_put_hex_dump(&s, instructions, instructions_len, 0, false);
-    VLOG_INFO("+++++ pjq insructions:\n%s", ds_cstr(&s));
-    ds_destroy(&s);
+   // struct ds s;
+  //  ds_init(&s);
+   // ds_put_hex_dump(&s, instructions, instructions_len, 0, false);
+   // VLOG_INFO("+++++ pjq insructions:\n%s", ds_cstr(&s));
+   // ds_destroy(&s);
 
-    VLOG_INFO("++++++pjq ofpacts_pull_openflow_instructions: ofpbuf_try_pull: instruction_len: %d", instructions->len);
+  //  VLOG_INFO("++++++pjq ofpacts_pull_openflow_instructions: ofpbuf_try_pull: instruction_len: %d", instructions->len);
     if (instructions == NULL) {
         VLOG_WARN_RL(&rl, "OpenFlow message instructions length %u exceeds "
                      "remaining message length (%"PRIu32")",
@@ -7772,7 +7742,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     }
 
     if (insts[OVSINST_OFPIT13_METER]) {
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT13_METER");
+       // VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT13_METER");
         const struct ofp13_instruction_meter *oim;
         struct ofpact_meter *om;
 
@@ -7784,18 +7754,18 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     }
 
     if (insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET]) {     /* pjq */
-        VLOG_INFO("+++++++++++pjq ofpacts_pull_openflow_instructions: before OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET");
+       // VLOG_INFO("+++++++++++pjq ofpacts_pull_openflow_instructions: before OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET");
         const struct ofp11_instruction_write_metadata_from_packet *oiwmfp;
         struct ofpact_write_metadata_from_packet *owm;
 
         oiwmfp = ALIGNED_CAST(const struct ofp11_instruction_write_metadata_from_packet *,
                               insts[OVSINST_OFPIT11_WRITE_METADATA_FROM_PACKET] + 1);
 
-        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",oiwmfp->metadata_offset,
-                  oiwmfp->packet_offset, oiwmfp->field_len);
-        VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",ntohs(oiwmfp->metadata_offset),
-                  ntohs(oiwmfp->packet_offset), ntohs(oiwmfp->field_len));
-        VLOG_INFO("++++++ OFPACT_WRITE_METADATA_FROM_PACKET_SIZE:%d", OFPACT_WRITE_METADATA_FROM_PACKET_SIZE);
+        //VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",oiwmfp->metadata_offset,
+        //          oiwmfp->packet_offset, oiwmfp->field_len);
+      //  VLOG_INFO("++++++++pjq  metadata_offset:%d, packet_offset:%d,   field_len:%d",ntohs(oiwmfp->metadata_offset),
+       //           ntohs(oiwmfp->packet_offset), ntohs(oiwmfp->field_len));
+       // VLOG_INFO("++++++ OFPACT_WRITE_METADATA_FROM_PACKET_SIZE:%d", OFPACT_WRITE_METADATA_FROM_PACKET_SIZE);
         //ofpacts->header = ofpbuf_put_uninit(ofpacts, 16);
         //owm = ofpacts->header;
         //ofpact_init(&owm->ofpact, OFPACT_WRITE_METADATA_FROM_PACKET, sizeof owm);
@@ -7807,17 +7777,17 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         //owm->ofpact.raw = 42;
 
 
-        struct ds s;
-        ds_init(&s);
-        ds_put_hex_dump(&s, ofpacts->header, sizeof owm, 0, false);
-        VLOG_INFO("+++++ pjq ofpact:\n%s", ds_cstr(&s));
-        ds_destroy(&s);
+      //  struct ds s;
+      //  ds_init(&s);
+      //  ds_put_hex_dump(&s, ofpacts->header, sizeof owm, 0, false);
+      //  VLOG_INFO("+++++ pjq ofpact:\n%s", ds_cstr(&s));
+      //  ds_destroy(&s);
     }
 
 
     if (insts[OVSINST_OFPIT11_APPLY_ACTIONS]) {
-        VLOG_INFO("++++++++pjq value of OVSINST_OFPIT11_APPLY_ACTIONS:%d", OVSINST_OFPIT11_APPLY_ACTIONS);
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_APPLY_ACTIONS");
+      //  VLOG_INFO("++++++++pjq value of OVSINST_OFPIT11_APPLY_ACTIONS:%d", OVSINST_OFPIT11_APPLY_ACTIONS);
+       // VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_APPLY_ACTIONS");
         const struct pof_instruction_apply_actions *piaa;
         uint8_t action_num;
         get_piaa_from_instruction(insts[OVSINST_OFPIT11_APPLY_ACTIONS],
@@ -7841,13 +7811,13 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
 
     }
     if (insts[OVSINST_OFPIT11_CLEAR_ACTIONS]) {
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_CLEAR_ACTIONS");
+    //    VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_CLEAR_ACTIONS");
         instruction_get_OFPIT11_CLEAR_ACTIONS(
             insts[OVSINST_OFPIT11_CLEAR_ACTIONS]);
         ofpact_put_CLEAR_ACTIONS(ofpacts);
     }
     if (insts[OVSINST_OFPIT11_WRITE_ACTIONS]) {
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_WRITE_ACTIONS");
+     //   VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_WRITE_ACTIONS");
         struct ofpact_nest *on;
         const struct ofp_action_header *actions;
         size_t actions_len;
@@ -7865,7 +7835,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
         on->ofpact.len = ofpacts->size - start;
     }
     if (insts[OVSINST_OFPIT11_WRITE_METADATA]) {
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_WRITE_METADATA");
+      //  VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_WRITE_METADATA");
         const struct ofp11_instruction_write_metadata *oiwm;
         struct ofpact_metadata *om;
 
@@ -7878,7 +7848,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
     }
 
     if (insts[OVSINST_OFPIT11_GOTO_TABLE]) {
-        VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_GOTO_TABLE");
+       // VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: befoore OVSINST_OFPIT11_GOTO_TABLE");
         const struct ofp11_instruction_goto_table *oigt;
         struct ofpact_goto_table *ogt;
         get_oigt_from_instruction(insts[OVSINST_OFPIT11_GOTO_TABLE],&oigt);
@@ -7899,7 +7869,7 @@ ofpacts_pull_openflow_instructions(struct ofpbuf *openflow,
 
 
 
-    VLOG_INFO("+++++++++++pjq ofpacts->size:%d, N_OVS_INSTRUCIONS:%d", ofpacts->size, N_OVS_INSTRUCTIONS);
+    //VLOG_INFO("+++++++++++pjq ofpacts->size:%d, N_OVS_INSTRUCIONS:%d", ofpacts->size, N_OVS_INSTRUCTIONS);
     error = ofpacts_verify(ofpacts->data, ofpacts->size,
                            (1u << N_OVS_INSTRUCTIONS) - 1, 0);
     VLOG_INFO("+++++++++++sqy ofpacts_pull_openflow_instructions: after ofpacts_verify");
@@ -9399,7 +9369,7 @@ ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
     }*/
 
     length = ntohs(oah->len);
-    VLOG_INFO("++++++++pjq OpenFlow action %s   length: %u",action->name, length);
+ //   VLOG_INFO("++++++++pjq OpenFlow action %s   length: %u",action->name, length);
     if (length > buf->size) {
         VLOG_WARN_RL(&rl, "OpenFlow action %s length %u exceeds action buffer "
                      "length %"PRIu32, action->name, length, buf->size);
@@ -9417,7 +9387,7 @@ ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         return OFPERR_OFPBAC_BAD_LEN;
     }
 
-    VLOG_INFO("++++++ pjq i'm here 1");
+   // VLOG_INFO("++++++ pjq i'm here 1");
 
     *raw = action->raw;
     *arg = 0;
@@ -9431,13 +9401,13 @@ ofpact_pof_pull_raw(struct ofpbuf *buf, enum ofp_version ofp_version,
         }
     }
 
-    VLOG_INFO("++++++ pjq i'm here 2");
+  //  VLOG_INFO("++++++ pjq i'm here 2");
 
     /*ofpbuf_pull(buf, POF_MAX_ACTION_LENGTH);*/
     ofpbuf_pull(buf, length);
 
 
-    VLOG_INFO("++++++ pjq i'm here 3");
+   // VLOG_INFO("++++++ pjq i'm here 3");
 
     return 0;
 }

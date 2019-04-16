@@ -3968,7 +3968,7 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
     struct pofdp_metadata_batch pof_mds;   /* pjq */
     //pof_mds.pof_mds = (struct pofdp_metadata *)malloc(sizeof(struct pofdp_metadata));
     pofdp_metadata_batch_init(&pof_mds);
-    VLOG_INFO("++++++ pjq sizeof(pof_mds):%d", sizeof(pof_mds));
+  //  VLOG_INFO("++++++ pjq sizeof(pof_mds):%d", sizeof(pof_mds));
 
     /*VLOG_INFO("+++++++++++sqy packet_batch_per_flow_execute: before dp_netdev_flow_used");*/
     dp_netdev_flow_used(flow, batch->array.count, batch->byte_count,
@@ -4024,7 +4024,7 @@ packet_batch_per_flow_execute(struct packet_batch_per_flow *batch,
         last_n_bytes_used = 0;
         last_sel_int_packets = 0;
     }
-    VLOG_INFO("++++++ pjq before dp_netdev_execute_actions");
+   // VLOG_INFO("++++++ pjq before dp_netdev_execute_actions");
 
     dp_netdev_execute_actions(pmd, &batch->array, true, &flow->flow,
                               actions->actions, actions->size, &pof_mds, now);
@@ -4097,11 +4097,11 @@ emc_processing(struct dp_netdev_pmd_thread *pmd, struct dp_packet_batch *packets
 
         flow = emc_lookup(flow_cache, key);
         if (flow != NULL) {
-            VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
-                      flow->stats.byte_count);
+           // VLOG_INFO("+++++tsf emc_processing: flow.stats->n_packets=%d, n_bytes=%d", flow->stats.packet_count,
+                  //    flow->stats.byte_count);
         }
         else {
-        	VLOG_WARN("+++++tsf emc_processing: no finding emc_rule!!!");
+        	//VLOG_WARN("+++++tsf emc_processing: no finding emc_rule!!!");
         }
 
         if (OVS_LIKELY(flow)) {
@@ -4135,8 +4135,8 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
     struct pofdp_metadata_batch pof_mds;    /* pjq */
     //pof_mds.pof_mds = (struct pofdp_metadata *)malloc(sizeof(struct pofdp_metadata));
     pofdp_metadata_batch_init(&pof_mds);
-    VLOG_INFO("+++++++ pjq sizeof(pof_mds):%d", sizeof(pof_mds));
-    VLOG_INFO("++++++ pjq the addr of pof_mds:%p", &pof_mds);
+    //VLOG_INFO("+++++++ pjq sizeof(pof_mds):%d", sizeof(pof_mds));
+    //VLOG_INFO("++++++ pjq the addr of pof_mds:%p", &pof_mds);
     //VLOG_INFO("++++++ pjq the addr of pof_mds:%p", pof_mds);
     struct match match;
     ovs_u128 ufid;
@@ -4174,9 +4174,9 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
      * the actions.  Otherwise, if there are any slow path actions,
      * we'll send the packet up twice. */
     packet_batch_init_packet(&b, packet);
-    VLOG_INFO("++++++ pjq before dp_netdev_execute_actions");
-    VLOG_INFO("++++++ pjq the addr of pof_mds:%p", &pof_mds);
-    VLOG_INFO("++++++ pjq the addr of b:%p", &b);
+   // VLOG_INFO("++++++ pjq before dp_netdev_execute_actions");
+   // VLOG_INFO("++++++ pjq the addr of pof_mds:%p", &pof_mds);
+   // VLOG_INFO("++++++ pjq the addr of b:%p", &b);
     dp_netdev_execute_actions(pmd, &b, true, &match.flow,
                               actions->data, actions->size, &pof_mds, now);
 
@@ -4214,7 +4214,7 @@ handle_packet_upcall(struct dp_netdev_pmd_thread *pmd, struct dp_packet *packet,
         }
         ovs_mutex_unlock(&pmd->flow_mutex);
 
-        VLOG_INFO("++++++ before emc_insert");
+        //VLOG_INFO("++++++ before emc_insert");
 
         emc_insert(&pmd->flow_cache, key, netdev_flow);
     }
@@ -4313,7 +4313,7 @@ fast_path_processing(struct dp_netdev_pmd_thread *pmd,
         flow = dp_netdev_flow_cast(rules[i]);
 
         emc_insert(flow_cache, &keys[i], flow);
-        VLOG_INFO("+++++++tsf fast_path_processing: dp_netdev_queue_batches 222");
+        //VLOG_INFO("+++++++tsf fast_path_processing: dp_netdev_queue_batches 222");
         dp_netdev_queue_batches(packet, flow, &keys[i].mf, batches, n_batches);
     }
 
@@ -4335,7 +4335,7 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
                   bool md_is_valid, odp_port_t port_no)
 {
     int cnt = packets->count;
-    VLOG_INFO("+++++ the number of packet:%d", cnt);
+    //VLOG_INFO("+++++ the number of packet:%d", cnt);
 #if !defined(__CHECKER__) && !defined(_WIN32)
     const size_t PKT_ARRAY_SIZE = cnt;
 #else
@@ -4353,7 +4353,7 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
 //    VLOG_INFO("++++++tsf dp_netdev_input__: now = %lld", now);
 
     n_batches = 0;
-    VLOG_INFO("+++++ pjq before emc_processing");
+    //VLOG_INFO("+++++ pjq before emc_processing");
     newcnt = emc_processing(pmd, packets, keys, batches, &n_batches,
                             md_is_valid, port_no);
     if (OVS_UNLIKELY(newcnt)) {
@@ -4376,7 +4376,7 @@ dp_netdev_input__(struct dp_netdev_pmd_thread *pmd,
     for (i = 0; i < n_batches; i++) {
     	//VLOG_INFO("+++++++tsf dp_netdev_input__: dp_netdev_input__ n_batches=%d, batch->count=%d 2222222",
     	//		n_batches, batches[i].array.count);
-        VLOG_INFO("+++++ pjq before packet_batch_per_flow_execute");
+       // VLOG_INFO("+++++ pjq before packet_batch_per_flow_execute");
         packet_batch_per_flow_execute(&batches[i], pmd, now);
     }
 }
@@ -4789,11 +4789,11 @@ dp_netdev_execute_actions(struct dp_netdev_pmd_thread *pmd,
 {
     struct dp_netdev_execute_aux aux = { pmd, now, flow };
 
-    VLOG_INFO("+++++ pjq actions->nla_len:%d, actions->nla_type:%d, actions_len:%d",
-              actions->nla_len, actions->nla_type, actions_len);
+    //VLOG_INFO("+++++ pjq actions->nla_len:%d, actions->nla_type:%d, actions_len:%d",
+      //        actions->nla_len, actions->nla_type, actions_len);
 
-    VLOG_INFO("++++++ pjq the addr of pof_mds:%p", pof_mds);
-    VLOG_INFO("++++++ pjq the addr of packets:%p", packets);
+    //VLOG_INFO("++++++ pjq the addr of pof_mds:%p", pof_mds);
+    //VLOG_INFO("++++++ pjq the addr of packets:%p", packets);
     odp_execute_actions(&aux, packets, may_steal, actions,
                         actions_len, dp_execute_cb, pof_mds,
                         &(pmd->bd_info));

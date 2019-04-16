@@ -103,6 +103,10 @@ EXTRA_DIST = \
 	.travis/linux-prepare.sh \
 	.travis/osx-build.sh \
 	.travis/osx-prepare.sh \
+	.idea/OpenvSwitch-pof.iml \
+	.idea/modules.xml \
+	.idea/encodings.xml \
+	.idea/workspace.xml \
 	appveyor.yml \
 	boot.sh \
 	setup.sh \
